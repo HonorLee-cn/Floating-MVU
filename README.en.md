@@ -8,7 +8,7 @@
 
 <center>
 
-[![Title](image/Title.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/main/image/Title.png)
+[![Title](image/Title.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Title.png)
 
 </center>
 
@@ -22,7 +22,7 @@ The model returns updates as `<floating-mvu>{...JSON...}</floating-mvu>` from re
 
 <center>
 
-[![Full](image/Full.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/main/image/Full.png)
+[![Full](image/Full.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Full.png)
 
 *Please ignore my questionable taste in demo presets ε==(づ′▽`)づ*
 
@@ -53,7 +53,7 @@ The model returns updates as `<floating-mvu>{...JSON...}</floating-mvu>` from re
 
 <center>
 
-[![Setting](image/Setting.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/main/image/Setting.png)
+[![Setting](image/Setting.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Setting.png)
 
 </center>
 
@@ -67,7 +67,7 @@ The model returns updates as `<floating-mvu>{...JSON...}</floating-mvu>` from re
 
 <center>
 
-[![Main](image/Main.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/main/image/Main.png)
+[![Main](image/Main.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Main.png)
 
 </center>
 
@@ -82,7 +82,7 @@ The model returns updates as `<floating-mvu>{...JSON...}</floating-mvu>` from re
 
 <center>
 
-[![Preset](image/Preset.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/main/image/Preset.png)
+[![Preset](image/Preset.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Preset.png)
 
 </center>
 
@@ -102,9 +102,9 @@ Image variables are **panel-only** and **excluded** from prompt assembly. Change
 
 <center>
 
-[![Var 1](image/Var_1.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/main/image/Var_1.png)
-[![Var 2](image/Var_2.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/main/image/Var_2.png)
-[![Var 3](image/Var_3.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/main/image/Var_3.png)
+[![Var 1](image/Var_1.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Var_1.png)
+[![Var 2](image/Var_2.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Var_2.png)
+[![Var 3](image/Var_3.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Var_3.png)
 
 </center>
 
@@ -127,8 +127,8 @@ Image variables are **panel-only** and **excluded** from prompt assembly. Change
 
 <center>
 
-[![Theme 1](image/Theme_1.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/main/image/Theme_1.png)
-[![Theme 2](image/Theme_2.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/main/image/Theme_2.png)
+[![Theme 1](image/Theme_1.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Theme_1.png)
+[![Theme 2](image/Theme_2.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Theme_2.png)
 
 </center>
 
@@ -216,9 +216,9 @@ Disable and **Delete** in **Manage extensions**, or remove `third-party/Floating
 
 <table>
   <tr>
-    <td><a href="https://github.com/HonorLee-cn/Floating-MVU/blob/main/image/BMAC_W.png"><img src="image/BMAC_W.png" width="200" alt="Buy Me a Coffee WeChat"></a></td>
+    <td><a href="https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/BMAC_W.png"><img src="image/BMAC_W.png" width="200" alt="Buy Me a Coffee WeChat"></a></td>
     <td>~</td>
-    <td><a href="https://github.com/HonorLee-cn/Floating-MVU/blob/main/image/BMAC_U.png"><img src="image/BMAC_U.png" width="200" alt="Buy Me a Coffee"></a></td>
+    <td><a href="https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/BMAC_U.png"><img src="image/BMAC_U.png" width="200" alt="Buy Me a Coffee"></a></td>
   </tr>
 </table>
 

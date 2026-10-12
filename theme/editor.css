@@ -1,0 +1,294 @@
+/**
+ * Floating MVU — 编辑/配置弹窗与 overlay（不参与面板 theme 配色 tokens）
+ */
+
+.floating-mvu-group-box-actions .menu_button {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+}
+
+.floating-mvu-group-empty {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.floating-mvu-preset-row-name {
+    flex: 1 1 auto;
+    text-align: left;
+    justify-content: flex-start;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.floating-mvu-preset-row-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 4px;
+}
+
+.floating-mvu-preset-row-actions .menu_button {
+    width: 32px;
+    min-width: 32px;
+    padding: 0;
+}
+
+.floating-mvu-preset-editor label:not(.checkbox_label) {
+    display: block;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.floating-mvu-preset-auto-update-box {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.45));
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.floating-mvu-preset-editor .floating-mvu-preset-auto-update-label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    cursor: pointer;
+    width: 100%;
+}
+
+.floating-mvu-preset-editor .floating-mvu-preset-auto-update-label input[type='checkbox'] {
+    margin: 0;
+    flex: 0 0 auto;
+}
+
+.floating-mvu-preset-editor .floating-mvu-preset-auto-update-label span {
+    flex: 1 1 auto;
+    line-height: 1.35;
+}
+
+.floating-mvu-preset-editor .floating-mvu-config-panel-mount {
+    min-height: min(52vh, 520px);
+}
+
+.floating-mvu-preset-editor .floating-mvu-config-panel-mount,
+.floating-mvu-config-panel {
+    position: relative;
+}
+
+/* 配置编辑：内层 Group 始终显示边框，便于区分（含未命名分组） */
+.floating-mvu-config-panel .floating-mvu-group-box:not(.floating-mvu-group-root) {
+    border: 1px solid var(--mvu-group-box-border, rgba(128, 128, 128, 0.55));
+    background-color: var(--mvu-group-box-bg, rgba(255, 255, 255, 0.04));
+}
+
+.floating-mvu-config-panel .floating-mvu-group-box--no-name {
+    padding: 8px 10px;
+    border: 1px dashed var(--mvu-group-box-border, rgba(128, 128, 128, 0.5));
+    background-color: var(--mvu-group-box-bg, rgba(255, 255, 255, 0.03));
+}
+
+.floating-mvu-config-panel .floating-mvu-group-root {
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px dashed var(--mvu-group-root-border, rgba(128, 128, 128, 0.4));
+    border-radius: 8px;
+    background-color: var(--mvu-group-root-bg, rgba(255, 255, 255, 0.02));
+}
+
+.floating-mvu-config-sort-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.floating-mvu-config-sort-item-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.floating-mvu-config-sort-item-body > .floating-mvu-var-block,
+.floating-mvu-config-sort-item-body > .floating-mvu-group-box,
+.floating-mvu-config-sort-item-body > .floating-mvu-group-root {
+    width: 100%;
+}
+
+.floating-mvu-config-drag-handle {
+    flex: 0 0 auto;
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
+    min-height: 26px;
+    padding: 0;
+    margin-top: 6px;
+    cursor: grab;
+    opacity: 0.65;
+}
+
+.floating-mvu-config-drag-handle:active {
+    cursor: grabbing;
+}
+
+.floating-mvu-config-sort-item-dragging {
+    opacity: 0.55;
+}
+
+.floating-mvu-config-sort-drop-target {
+    outline: 1px dashed var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.55));
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.floating-mvu-config-panel .floating-mvu-group-root > .floating-mvu-group-box-stack[data-config-sort-stack] {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.floating-mvu-config-panel .floating-mvu-group-root > .floating-mvu-group-box-stack[data-config-sort-stack] > .floating-mvu-config-sort-item {
+    flex: 1 1 100%;
+    max-width: 100%;
+}
+
+.floating-mvu-config-panel .floating-mvu-group-box:not(.floating-mvu-group-root) > .floating-mvu-group-box-stack[data-config-sort-stack] {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.floating-mvu-config-panel .floating-mvu-group-box:not(.floating-mvu-group-root) > .floating-mvu-group-box-stack[data-config-sort-stack] > .floating-mvu-config-sort-item[data-sort-kind='variable'] {
+    flex: 1 1 calc(50% - 8px);
+    max-width: calc(50% - 4px);
+}
+
+.floating-mvu-config-panel .floating-mvu-group-box:not(.floating-mvu-group-root) > .floating-mvu-group-box-stack[data-config-sort-stack] > .floating-mvu-config-sort-item[data-sort-kind='group'] {
+    flex: 1 1 100%;
+    max-width: 100%;
+}
+
+.floating-mvu-config-panel .floating-mvu-group-box:not(.floating-mvu-group-root) > .floating-mvu-group-box-stack[data-config-sort-stack] > .floating-mvu-config-sort-item[data-var-type='longtext'],
+.floating-mvu-config-panel .floating-mvu-group-box:not(.floating-mvu-group-root) > .floating-mvu-group-box-stack[data-config-sort-stack] > .floating-mvu-config-sort-item[data-var-type='image'] {
+    flex: 1 1 100%;
+    max-width: 100%;
+}
+
+.floating-mvu-config-panel [data-config-sort-stack].floating-mvu-config-sort-drop-target {
+    outline: 1px dashed var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.55));
+    outline-offset: 2px;
+    border-radius: 6px;
+    min-height: 28px;
+}
+
+.floating-mvu-var-editor-overlay,
+.floating-mvu-group-editor-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: inherit;
+}
+
+.floating-mvu-var-editor-card {
+    width: min(100%, 320px);
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.45));
+    background-color: var(--SmartThemeBlurTintColor, rgba(20, 20, 20, 0.98));
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.floating-mvu-var-editor-card label {
+    display: block;
+    margin-top: 8px;
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+}
+
+.floating-mvu-var-type-panel {
+    display: none;
+}
+
+.floating-mvu-var-type-panel.is-visible {
+    display: block;
+}
+
+.floating-mvu-var-field-name.is-hidden,
+.floating-mvu-var-field-desc.is-hidden {
+    display: none !important;
+}
+
+.floating-mvu-var-type-panel-range .flex-container {
+    width: 100%;
+}
+
+.floating-mvu-var-type-panel-range .floating-mvu-var-range-min,
+.floating-mvu-var-type-panel-range .floating-mvu-var-range-max {
+    flex: 1 1 50%;
+    min-width: 0;
+}
+
+.floating-mvu-var-editor-title {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+}
+
+.floating-mvu-theme-manager-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.floating-mvu-theme-manager-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+}
+
+.floating-mvu-theme-manager-row-active {
+    border-color: var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.45));
+    background-color: var(--SmartThemeEmColor, rgba(255, 255, 255, 0.04));
+}
+
+.floating-mvu-theme-manager-row .floating-mvu-theme-select {
+    flex: 1 1 auto;
+    text-align: left;
+    justify-content: flex-start;
+}
+
+.floating-mvu-theme-manager-row-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.floating-mvu-theme-manager-row-actions .menu_button {
+    width: 32px;
+    min-width: 32px;
+    padding: 0;
+}
+
+.floating-mvu-theme-token-label {
+    flex: 0 0 120px;
+    font-size: 0.85rem;
+}
+
+.floating-mvu-theme-swatch {
+    width: 36px;
+    min-width: 36px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}

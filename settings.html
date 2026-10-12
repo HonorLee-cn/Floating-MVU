@@ -1,0 +1,89 @@
+
+<div class="floating_mvu_settings">
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <b>Floating MVU</b>
+            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+        </div>
+        <div class="inline-drawer-content">
+            <label for="floating_mvu_locale">Extension UI language</label>
+            <select id="floating_mvu_locale" class="text_pole wide100p marginBot5">
+                <option value="zh" data-fmvu-i18n="settings.locale.zh">简体中文</option>
+                <option value="en" data-fmvu-i18n="settings.locale.en">English</option>
+            </select>
+
+            <label class="checkbox_label flexNoGap" for="floating_mvu_enabled">
+                <input id="floating_mvu_enabled" type="checkbox">
+                <span data-fmvu-i18n="settings.enabled">启用 Floating MVU</span>
+            </label>
+            <label class="checkbox_label flexNoGap" for="floating_mvu_auto_show">
+                <input id="floating_mvu_auto_show" type="checkbox">
+                <span data-fmvu-i18n="settings.autoShow">进入聊天后自动显示浮动按钮</span>
+            </label>
+            <label class="checkbox_label flexNoGap" for="floating_mvu_default_expand">
+                <input id="floating_mvu_default_expand" type="checkbox">
+                <span data-fmvu-i18n="settings.defaultExpand">进入聊天时默认展开面板</span>
+            </label>
+            <label class="checkbox_label flexNoGap" for="floating_mvu_debug_mode">
+                <input id="floating_mvu_debug_mode" type="checkbox">
+                <span data-fmvu-i18n="settings.debugMode">调试模式</span>
+            </label>
+            <div class="flex-container flexGap5 marginTop5">
+                <button id="floating_mvu_reset_positions" type="button" class="menu_button">
+                    <i class="fa-solid fa-arrows-up-down-left-right"></i>
+                    <span data-fmvu-i18n="settings.resetPositions">重置 FAB / 面板位置</span>
+                </button>
+            </div>
+
+            <hr class="wide100p marginTop10 marginBot10">
+
+            <h4 class="margin0 marginBot5" data-fmvu-i18n="settings.customApi.title">自定义 API</h4>
+
+            <label class="checkbox_label flexNoGap marginTop5" for="floating_mvu_custom_api_enabled">
+                <input id="floating_mvu_custom_api_enabled" type="checkbox">
+                <span data-fmvu-i18n="settings.customApi.enabled">启用自定义 API</span>
+            </label>
+
+            <div id="floating_mvu_custom_api_fields" class="displayNone">
+                <small class="notes" data-fmvu-i18n="settings.customApi.note"></small>
+
+                <label for="floating_mvu_custom_api_url" data-fmvu-i18n="settings.customApi.url">API 接口地址</label>
+                <input id="floating_mvu_custom_api_url" type="text" class="text_pole wide100p" placeholder="https://example.com/v1" autocomplete="off">
+
+                <label for="floating_mvu_custom_api_key" data-fmvu-i18n="settings.customApi.key">API Key</label>
+                <input id="floating_mvu_custom_api_key" type="password" class="text_pole wide100p" placeholder="sk-..." autocomplete="off">
+
+                <label data-fmvu-i18n="settings.customApi.modelMode">模型设置方式</label>
+                <div class="flex-container flexGap10 marginBot5">
+                    <label class="checkbox_label flexNoGap" for="floating_mvu_custom_api_model_mode_manual">
+                        <input id="floating_mvu_custom_api_model_mode_manual" type="radio" name="floating_mvu_custom_api_model_mode" value="manual">
+                        <span data-fmvu-i18n="settings.customApi.modelManual">手动输入</span>
+                    </label>
+                    <label class="checkbox_label flexNoGap" for="floating_mvu_custom_api_model_mode_select">
+                        <input id="floating_mvu_custom_api_model_mode_select" type="radio" name="floating_mvu_custom_api_model_mode" value="select">
+                        <span data-fmvu-i18n="settings.customApi.modelSelect">从列表选择</span>
+                    </label>
+                </div>
+
+                <div id="floating_mvu_custom_api_model_manual_block">
+                    <label for="floating_mvu_custom_api_model" data-fmvu-i18n="settings.customApi.model">模型</label>
+                    <input id="floating_mvu_custom_api_model" type="text" class="text_pole wide100p" placeholder="gpt-4o-mini" autocomplete="off">
+                </div>
+
+                <div id="floating_mvu_custom_api_model_select_block" class="displayNone">
+                    <label for="floating_mvu_custom_api_model_select" data-fmvu-i18n="settings.customApi.model">模型</label>
+                    <select id="floating_mvu_custom_api_model_select" class="text_pole wide100p">
+                        <option value=""></option>
+                    </select>
+                </div>
+
+                <div class="flex-container flexGap5 marginTop5">
+                    <button id="floating_mvu_custom_api_fetch_models" type="button" class="menu_button" disabled data-fmvu-i18n-title="settings.customApi.fetchModelsTitle">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                        <span data-fmvu-i18n="settings.customApi.fetchModels">拉取模型列表</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

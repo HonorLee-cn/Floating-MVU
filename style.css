@@ -1,0 +1,7 @@
+/**
+ * Floating MVU 样式入口
+ * - theme/default.less：面板显示配色与布局（编译为 default.css）
+ * - theme/editor.css：编辑弹窗 / overlay / 主题管理 UI
+ */
+@import url('./theme/default.css');
+@import url('./theme/editor.css');

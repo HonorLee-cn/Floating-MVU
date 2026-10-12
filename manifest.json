@@ -1,0 +1,16 @@
+{
+    "display_name": "Floating MVU",
+    "loading_order": 100,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "hooks": {
+        "activate": "init"
+    },
+    "author": "HonorLee",
+    "license": "GPL-3.0-or-later",
+    "version": "1.0.0",
+    "homePage": "https://github.com/HonorLee-cn/Floating-MVU",
+    "auto_update": false
+}

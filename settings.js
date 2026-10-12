@@ -1,6 +1,7 @@
 import { saveSettingsDebounced } from '../../../../script.js';
 import { extension_settings, renderExtensionTemplateAsync } from '../../../extensions.js';
 import { fetchModelList } from './api/client.js';
+import { getExtensionResourcePrefix } from './extension-path.js';
 import { applySettingsPanelI18n, t } from './i18n/index.js';
 
 export const SETTINGS_KEY = 'floating_mvu';
@@ -169,7 +170,7 @@ export async function registerExtensionSettingsUi(syncUi) {
         $container.empty();
     }
 
-    const html = await renderExtensionTemplateAsync('third-party/FloatingMVU', 'settings');
+    const html = await renderExtensionTemplateAsync(getExtensionResourcePrefix(), 'settings');
     $container.append(html);
     bindSettingsControls(syncUi);
     refreshSettingsControls();

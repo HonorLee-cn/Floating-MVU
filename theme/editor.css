@@ -68,6 +68,40 @@
     line-height: 1.35;
 }
 
+.floating-mvu-preset-editor .floating-mvu-preset-candidate-count-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.35));
+}
+
+.floating-mvu-preset-editor .floating-mvu-preset-candidate-count-row-hidden {
+    display: none !important;
+}
+
+.floating-mvu-preset-editor .floating-mvu-preset-candidate-count-label {
+    flex: 0 0 auto;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.35;
+}
+
+.floating-mvu-preset-editor .floating-mvu-preset-candidate-count {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+}
+
+.floating-mvu-preset-editor .floating-mvu-preset-candidate-count-value {
+    flex: 0 0 auto;
+    min-width: 1.25rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
 .floating-mvu-preset-editor .floating-mvu-config-panel-mount {
     min-height: min(52vh, 520px);
 }

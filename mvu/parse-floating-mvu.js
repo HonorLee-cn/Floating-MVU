@@ -1,18 +1,137 @@
+import {
+    preprocessMvuAssistantText,
+    repairAssistantTextFromMvuPrefill,
+} from './assistant-text-preprocess.js';
+import {
+    normalizeCandidatesFromPayload,
+    stripCandidatesFromMvuPayload,
+} from './chat-candidates.js';
 import { normalizeMvuPayloadForPreset } from './chat-variables.js';
+import { getPresetMaxCandidateCount, isPresetAutoCandidateReplies } from './schema.js';
 
-const FLOATING_MVU_TAG_RE = /<floating-mvu>\s*([\s\S]*?)\s*<\/floating-mvu>/i;
+const FLOATING_MVU_STRICT_RE = /<floating-mvu>\s*([\s\S]*?)\s*<\/floating-mvu>/gi;
+const FLOATING_MVU_OPEN_RE = /<floating-mvu>\s*/gi;
 
 /**
- * @param {string} text
- * @returns {{ jsonText: string | null, matched: boolean }}
+ * @param {string} jsonText
+ * @returns {boolean}
+ */
+function isParseableJsonObject(jsonText) {
+    try {
+        const parsed = JSON.parse(jsonText);
+        return Boolean(parsed && typeof parsed === 'object' && !Array.isArray(parsed));
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * @param {string} source
+ * @param {number} openIndex
+ * @returns {string | null}
+ */
+function extractBalancedJsonObjectFromOpenIndex(source, openIndex) {
+    const slice = source.slice(openIndex);
+    const openMatch = slice.match(/^<floating-mvu>\s*/i);
+    if (!openMatch) {
+        return null;
+    }
+    const rest = slice.slice(openMatch[0].length);
+    const firstBrace = rest.indexOf('{');
+    if (firstBrace < 0) {
+        return null;
+    }
+
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+
+    for (let i = firstBrace; i < rest.length; i++) {
+        const ch = rest[i];
+        if (inString) {
+            if (escape) {
+                escape = false;
+                continue;
+            }
+            if (ch === '\\') {
+                escape = true;
+                continue;
+            }
+            if (ch === '"') {
+                inString = false;
+            }
+            continue;
+        }
+        if (ch === '"') {
+            inString = true;
+            continue;
+        }
+        if (ch === '{') {
+            depth++;
+            continue;
+        }
+        if (ch === '}') {
+            depth--;
+            if (depth === 0) {
+                return rest.slice(firstBrace, i + 1);
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * @param {string} text 已 preprocess 的正文
+ * @returns {{ jsonText: string | null, matched: boolean, relaxed?: boolean, warnings: string[] }}
  */
 export function extractFloatingMvuJsonText(text) {
     const source = String(text ?? '');
-    const match = source.match(FLOATING_MVU_TAG_RE);
-    if (!match) {
-        return { jsonText: null, matched: false };
+    /** @type {string[]} */
+    const warnings = [];
+
+    FLOATING_MVU_STRICT_RE.lastIndex = 0;
+    const strictMatches = [...source.matchAll(FLOATING_MVU_STRICT_RE)];
+    if (strictMatches.length > 1) {
+        warnings.push(`检测到 ${strictMatches.length} 组完整的 <floating-mvu>…</floating-mvu>，已采用最后一组（忽略模型「修正」前的错误段落）`);
     }
-    return { jsonText: match[1].trim(), matched: true };
+    if (strictMatches.length) {
+        const last = strictMatches[strictMatches.length - 1];
+        return {
+            jsonText: last[1].trim(),
+            matched: true,
+            warnings,
+        };
+    }
+
+    FLOATING_MVU_OPEN_RE.lastIndex = 0;
+    const openMatches = [...source.matchAll(FLOATING_MVU_OPEN_RE)];
+    /** @type {{ jsonText: string, index: number }[]} */
+    const relaxedCandidates = [];
+    for (const m of openMatches) {
+        if (m.index === undefined) {
+            continue;
+        }
+        const json = extractBalancedJsonObjectFromOpenIndex(source, m.index);
+        if (json && isParseableJsonObject(json)) {
+            relaxedCandidates.push({ jsonText: json.trim(), index: m.index });
+        }
+    }
+
+    if (relaxedCandidates.length > 1) {
+        warnings.push(`检测到 ${relaxedCandidates.length} 处 <floating-mvu> 开标签，已采用最后一处可解析 JSON`);
+    }
+    if (relaxedCandidates.length) {
+        const last = relaxedCandidates[relaxedCandidates.length - 1];
+        return {
+            jsonText: last.jsonText,
+            matched: true,
+            relaxed: true,
+            warnings,
+        };
+    }
+
+    return { jsonText: null, matched: false, warnings };
 }
 
 /**
@@ -20,7 +139,18 @@ export function extractFloatingMvuJsonText(text) {
  * @param {import('./schema.js').MvuPreset} preset
  */
 export function parseFloatingMvuFromAssistantText(assistantText, preset) {
-    const { jsonText, matched } = extractFloatingMvuJsonText(assistantText);
+    const { text: repairedText, repaired: prefillRepaired } = repairAssistantTextFromMvuPrefill(assistantText);
+    const { text: normalizedText, warnings: preprocessWarnings } = preprocessMvuAssistantText(repairedText);
+    if (prefillRepaired) {
+        preprocessWarnings.push('检测到 prefill 续写片段（无 <floating-mvu> 开标签），已补全标签与 JSON 起始 { 后再解析');
+    }
+    const { jsonText, matched, relaxed, warnings: extractWarnings } = extractFloatingMvuJsonText(normalizedText);
+    /** @type {string[]} */
+    const extractWarningsAll = [...preprocessWarnings, ...extractWarnings];
+    if (relaxed) {
+        extractWarningsAll.push('未找到标准 </floating-mvu> 闭合标签，已从 <floating-mvu> 后按 JSON 对象容错提取');
+    }
+
     if (!matched) {
         return {
             ok: false,
@@ -28,7 +158,9 @@ export function parseFloatingMvuFromAssistantText(assistantText, preset) {
             jsonText: null,
             parsed: null,
             values: {},
-            warnings: [],
+            candidates: undefined,
+            shouldUpdateCandidates: false,
+            warnings: extractWarningsAll,
         };
     }
     if (!jsonText) {
@@ -38,7 +170,9 @@ export function parseFloatingMvuFromAssistantText(assistantText, preset) {
             jsonText: '',
             parsed: null,
             values: {},
-            warnings: [],
+            candidates: undefined,
+            shouldUpdateCandidates: false,
+            warnings: extractWarningsAll,
         };
     }
 
@@ -53,7 +187,9 @@ export function parseFloatingMvuFromAssistantText(assistantText, preset) {
             jsonText,
             parsed: null,
             values: {},
-            warnings: [],
+            candidates: undefined,
+            shouldUpdateCandidates: false,
+            warnings: extractWarningsAll,
         };
     }
 
@@ -64,11 +200,34 @@ export function parseFloatingMvuFromAssistantText(assistantText, preset) {
             jsonText,
             parsed,
             values: {},
-            warnings: [],
+            candidates: undefined,
+            shouldUpdateCandidates: false,
+            warnings: extractWarningsAll,
         };
     }
 
-    const { values, warnings } = normalizeMvuPayloadForPreset(preset, /** @type {Record<string, unknown>} */ (parsed));
+    const payload = /** @type {Record<string, unknown>} */ (parsed);
+    const maxCount = getPresetMaxCandidateCount(preset);
+    const wantCandidates = isPresetAutoCandidateReplies(preset);
+
+    /** @type {import('./schema.js').MvuCandidateItem[] | undefined} */
+    let candidates;
+    /** @type {boolean} */
+    let shouldUpdateCandidates = false;
+    /** @type {string[]} */
+    const candidateWarnings = [];
+
+    if (wantCandidates && '_candidates' in payload) {
+        shouldUpdateCandidates = true;
+        const normalized = normalizeCandidatesFromPayload(payload._candidates, maxCount);
+        candidates = normalized.items;
+        candidateWarnings.push(...normalized.warnings);
+    }
+
+    const variablePayload = stripCandidatesFromMvuPayload(payload);
+    const { values, warnings } = normalizeMvuPayloadForPreset(preset, variablePayload);
+    const warningsAll = [...extractWarningsAll, ...warnings, ...candidateWarnings];
+
     if (!Object.keys(values).length) {
         return {
             ok: false,
@@ -76,7 +235,9 @@ export function parseFloatingMvuFromAssistantText(assistantText, preset) {
             jsonText,
             parsed,
             values,
-            warnings,
+            candidates,
+            shouldUpdateCandidates,
+            warnings: warningsAll,
         };
     }
 
@@ -86,6 +247,8 @@ export function parseFloatingMvuFromAssistantText(assistantText, preset) {
         jsonText,
         parsed,
         values,
-        warnings,
+        candidates,
+        shouldUpdateCandidates,
+        warnings: warningsAll,
     };
 }

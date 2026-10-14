@@ -56,6 +56,9 @@ export function normalizeMvuPayloadForPreset(preset, payload) {
     const knownNames = new Set(variables.map(v => String(v.name ?? '').trim()).filter(Boolean));
 
     for (const key of Object.keys(payload)) {
+        if (key === '_candidates') {
+            continue;
+        }
         if (!knownNames.has(key)) {
             warnings.push(`忽略未知变量名：${key}`);
         }
@@ -85,6 +88,7 @@ export function normalizeMvuPayloadForPreset(preset, payload) {
  * @param {MvuChatVariableValues} patch
  * @param {object} [options]
  * @param {number} [options.anchorMessageIndex] 本次更新对应的角色消息层（索引）
+ * @param {import('./schema.js').MvuCandidateItem[] | null | undefined} [options.candidates] 变量写入成功时一并更新；undefined 表示不改动候选
  */
 export async function mergeChatVariableValues(preset, patch, options = {}) {
     const binding = ensureChatBindingObject();
@@ -92,11 +96,15 @@ export async function mergeChatVariableValues(preset, patch, options = {}) {
     const merged = { ...binding.values, ...values };
 
     const anchorIndex = options.anchorMessageIndex;
+    const candidates = options.candidates;
     if (typeof anchorIndex === 'number' && anchorIndex >= 0) {
-        await recordMvuSnapshotAtAnchor(anchorIndex, merged);
+        await recordMvuSnapshotAtAnchor(anchorIndex, merged, candidates);
         return;
     }
 
     binding.values = merged;
+    if (candidates !== undefined) {
+        binding.candidates = Array.isArray(candidates) ? candidates : [];
+    }
     await saveMetadata();
 }

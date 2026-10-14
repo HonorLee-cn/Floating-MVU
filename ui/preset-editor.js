@@ -36,6 +36,17 @@ export async function openPresetEditor(presetId, options = {}) {
                     <span>${t('presetEditor.autoUpdate')}</span>
                 </label>
             </div>
+            <div class="floating-mvu-preset-auto-update-box">
+                <label class="checkbox_label floating-mvu-preset-auto-update-label">
+                    <input type="checkbox" class="floating-mvu-preset-candidates" />
+                    <span>${t('presetEditor.candidateReplies')}</span>
+                </label>
+                <div class="floating-mvu-preset-candidate-count-row">
+                    <label class="floating-mvu-preset-candidate-count-label">${t('presetEditor.candidateCount')}</label>
+                    <input type="range" class="floating-mvu-preset-candidate-count" min="1" max="5" step="1" />
+                    <span class="floating-mvu-preset-candidate-count-value"></span>
+                </div>
+            </div>
             <hr class="wide100p marginTop10 marginBot10">
             <h4 class="margin0 marginBot5">${t('presetEditor.configPanel')}</h4>
             <div class="floating-mvu-config-panel-mount"></div>
@@ -45,6 +56,22 @@ export async function openPresetEditor(presetId, options = {}) {
     $dialog.find('.floating-mvu-preset-name').val(preset.name);
     $dialog.find('.floating-mvu-preset-desc').val(preset.description);
     $dialog.find('.floating-mvu-preset-auto-update').prop('checked', preset.autoUpdateOnMessageReceived !== false);
+    const $candidateToggle = $dialog.find('.floating-mvu-preset-candidates');
+    const $candidateCountRow = $dialog.find('.floating-mvu-preset-candidate-count-row');
+    const $candidateRange = $dialog.find('.floating-mvu-preset-candidate-count');
+    const $candidateValue = $dialog.find('.floating-mvu-preset-candidate-count-value');
+    $candidateToggle.prop('checked', preset.autoCandidateReplies === true);
+    $candidateRange.val(String(preset.maxCandidateCount ?? 3));
+    $candidateValue.text(String($candidateRange.val()));
+    $candidateRange.on('input', () => {
+        $candidateValue.text(String($candidateRange.val()));
+    });
+    const syncCandidateCountRowVisibility = () => {
+        const on = $candidateToggle.prop('checked');
+        $candidateCountRow.toggleClass('floating-mvu-preset-candidate-count-row-hidden', !on);
+    };
+    syncCandidateCountRowVisibility();
+    $candidateToggle.on('change', syncCandidateCountRowVisibility);
 
     const $configMount = $dialog.find('.floating-mvu-config-panel-mount');
     renderConfigPanel($configMount, preset);
@@ -83,6 +110,8 @@ export async function openPresetEditor(presetId, options = {}) {
     preset.name = String($dialog.find('.floating-mvu-preset-name').val()).trim() || t('panel.unnamedPreset');
     preset.description = String($dialog.find('.floating-mvu-preset-desc').val()).trim();
     preset.autoUpdateOnMessageReceived = $dialog.find('.floating-mvu-preset-auto-update').prop('checked');
+    preset.autoCandidateReplies = $dialog.find('.floating-mvu-preset-candidates').prop('checked');
+    preset.maxCandidateCount = Number($dialog.find('.floating-mvu-preset-candidate-count').val());
     ensurePresetShape(preset);
     upsertPreset(preset);
     options.onSaved?.();

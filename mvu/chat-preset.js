@@ -8,7 +8,7 @@ const METADATA_KEY = 'floating_mvu';
  */
 function ensureChatBindingObject() {
     if (!chat_metadata[METADATA_KEY] || typeof chat_metadata[METADATA_KEY] !== 'object') {
-        chat_metadata[METADATA_KEY] = { presetId: null, themeId: null, values: {}, snapshots: [] };
+        chat_metadata[METADATA_KEY] = { presetId: null, themeId: null, values: {}, candidates: [], snapshots: [] };
     }
     if (chat_metadata[METADATA_KEY].presetId === undefined) {
         chat_metadata[METADATA_KEY].presetId = null;
@@ -21,6 +21,9 @@ function ensureChatBindingObject() {
     }
     if (!Array.isArray(chat_metadata[METADATA_KEY].snapshots)) {
         chat_metadata[METADATA_KEY].snapshots = [];
+    }
+    if (!Array.isArray(chat_metadata[METADATA_KEY].candidates)) {
+        chat_metadata[METADATA_KEY].candidates = [];
     }
     return chat_metadata[METADATA_KEY];
 }

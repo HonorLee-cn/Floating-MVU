@@ -35,6 +35,7 @@ The model returns updates as `<floating-mvu>{...JSON...}</floating-mvu>` from re
 - **AI updates**: Manual refresh or optional auto-update after **character messages**; prompts follow UI language (zh/en) with footer rules for text variable language.
 - **Dual API paths**: Default SillyTavern generation, or optional **OpenAI-compatible** custom API (`/v1/chat/completions`) plus model list fetch.
 - **Timeline sync**: On message delete or swipe branch change, snapshots restore or drop values so state matches the transcript.
+- **Candidate replies (optional)**: When enabled on a preset, the same MVU JSON may include `_candidates`; a list above the FAB fills `#send_textarea` on click (smart wrapping, no auto-send). Hidden after you send a message until the next successful MVU update.
 - **Themes**: Built-in `default`; create/copy/edit themes (colors, background image, custom CSS), **bound per chat**.
 - **i18n**: Extension UI language (简体中文 / English); settings, panel, editors, and MVU prompts switch with locale.
 - **Debug mode**: Logs assembled prompts, API calls, and parse details in the browser console.
@@ -75,7 +76,7 @@ The model returns updates as `<floating-mvu>{...JSON...}</floating-mvu>` from re
 
 | Area | Description |
 |------|-------------|
-| **Presets** | Create/edit/delete; name, description, “auto-update after new messages”. |
+| **Presets** | Create/edit/delete; name, description, auto-update, optional candidate replies and count (1–5). |
 | **Variable types** | **Text**, **long text** (optional max length), **range** (min/max), **image** (URL + height; **not** included in MVU prompt assembly). |
 | **Structure** | Nested groups; add/edit/delete variables and groups; drag to reorder in the config panel. |
 | **Read-only view** | Main panel shows values; full editing is in the preset editor. |
@@ -117,6 +118,32 @@ Image variables are **panel-only** and **excluded** from prompt assembly. Change
 | Write | Validate names/types → `chat_metadata.floating_mvu.values`; record snapshot (anchor index + branch `pathKey`). |
 | Trigger | Header refresh button, or `MESSAGE_RECEIVED` (non-empty character message + preset auto-update on). |
 
+### 5.1 Candidate replies
+
+With **Generate candidate replies** on, the prompt asks for `_candidates` in the **same JSON root** as variables (max items = preset limit). Each item:
+
+| Field | Description |
+|-------|-------------|
+| `type` | `plot` \| `action` (**user** action) \| `dialogue` (**user** line) \| `director` (user OOC) |
+| `content` | Max 20 characters; all are for the user’s next message—**action must not describe the character’s actions** |
+
+Example:
+
+```json
+{
+  "HP": 80,
+  "_candidates": [
+    { "type": "plot", "content": "Night falls" },
+    { "type": "action", "content": "Knock her hand away" },
+    { "type": "dialogue", "content": "Let's go" }
+  ]
+}
+```
+
+- `_candidates` is stripped before variable normalization. The list updates **only when variables succeed and the response includes `_candidates`**; if omitted, the previous list stays.
+- Candidates are stored in `chat_metadata.floating_mvu.candidates` and timeline snapshots; delete/swipe restores them with variables.
+- UI: above the FAB, right-aligned; click **replaces** `#send_textarea` with smart wrapping. Hidden after `MESSAGE_SENT` until the next successful MVU update.
+
 ### 6. Themes (palette)
 
 | Area | Description |
@@ -137,7 +164,18 @@ Image variables are **panel-only** and **excluded** from prompt assembly. Change
 | Data | Location |
 |------|----------|
 | Extension settings, preset list, custom themes | `extension_settings.floating_mvu` |
-| Bound preset ID, theme ID, values, snapshots | That chat’s `chat_metadata.floating_mvu` |
+| Bound preset ID, theme ID, values, candidates, snapshots | That chat’s `chat_metadata.floating_mvu` |
+
+### Manual test checklist (candidate replies)
+
+- [ ] Candidates off: MVU refresh works; no list UI.
+- [ ] Candidates on, N=1 / 5: prompt mentions `_candidates`; parsed count ≤ N.
+- [ ] Model omits `_candidates`: variables still update; list unchanged.
+- [ ] Overlong `content` or invalid `type`: console warnings; bad items skipped.
+- [ ] Click each type: `[]` / `*action*` / quotes / `()` wrapping; no double-wrap when already present.
+- [ ] After sending a user message, list hides; shows again after next successful MVU update.
+- [ ] Delete message or swipe branch: variables and candidates restore from snapshot.
+- [ ] Manual refresh on custom API and built-in SillyTavern paths.
 
 ---
 

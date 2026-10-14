@@ -3,6 +3,7 @@ import { floatingMvuDebugTrace } from '../debug-log.js';
 import { ensureChatBindingObject } from './chat-preset.js';
 
 /** @typedef {Record<string, string | number>} MvuChatVariableValues */
+/** @typedef {import('./schema.js').MvuCandidateItem} MvuCandidateItem */
 
 /**
  * @typedef {object} MvuValueSnapshot
@@ -10,6 +11,7 @@ import { ensureChatBindingObject } from './chat-preset.js';
  * @property {number} chatLength 写入快照时的 chat.length
  * @property {string} pathKey 截至 anchorIndex 的分支路径（含各层 swipe_id）
  * @property {MvuChatVariableValues} values
+ * @property {MvuCandidateItem[]} [candidates]
  * @property {number} at
  */
 
@@ -54,10 +56,9 @@ function getSnapshotList() {
 }
 
 /**
- * @returns {MvuChatVariableValues}
+ * @returns {MvuValueSnapshot | null}
  */
-export function findBestSnapshotValuesForCurrentChat() {
-    const binding = ensureChatBindingObject();
+function findBestSnapshotForCurrentChat() {
     const snapshots = getSnapshotList();
     /** @type {MvuValueSnapshot | null} */
     let best = null;
@@ -71,6 +72,16 @@ export function findBestSnapshotValuesForCurrentChat() {
         }
     }
 
+    return best;
+}
+
+/**
+ * @returns {MvuChatVariableValues}
+ */
+export function findBestSnapshotValuesForCurrentChat() {
+    const binding = ensureChatBindingObject();
+    const best = findBestSnapshotForCurrentChat();
+
     if (best?.values && typeof best.values === 'object') {
         return { ...best.values };
     }
@@ -83,7 +94,25 @@ export function findBestSnapshotValuesForCurrentChat() {
 }
 
 /**
- * 将 binding.values 同步为当前时间线对应快照（删消息 / 切分支 / 加载聊天后调用）。
+ * @returns {MvuCandidateItem[]}
+ */
+export function findBestSnapshotCandidatesForCurrentChat() {
+    const binding = ensureChatBindingObject();
+    const best = findBestSnapshotForCurrentChat();
+
+    if (best && Array.isArray(best.candidates)) {
+        return best.candidates.map(c => ({ ...c }));
+    }
+
+    if (Array.isArray(binding.candidates)) {
+        return binding.candidates.map(c => ({ ...c }));
+    }
+
+    return [];
+}
+
+/**
+ * 将 binding.values / candidates 同步为当前时间线对应快照（删消息 / 切分支 / 加载聊天后调用）。
  */
 export async function syncMvuValuesToCurrentTimeline(reason = 'timeline') {
     const binding = ensureChatBindingObject();
@@ -93,8 +122,14 @@ export async function syncMvuValuesToCurrentTimeline(reason = 'timeline') {
 
     const resolved = findBestSnapshotValuesForCurrentChat();
     binding.values = resolved;
+    binding.candidates = findBestSnapshotCandidatesForCurrentChat();
     await saveMetadata();
-    floatingMvuDebugTrace('MVU 变量已按时间线同步', { reason, chatLength: chat.length, keys: Object.keys(resolved) });
+    floatingMvuDebugTrace('MVU 变量已按时间线同步', {
+        reason,
+        chatLength: chat.length,
+        keys: Object.keys(resolved),
+        candidateCount: binding.candidates.length,
+    });
 }
 
 /**
@@ -119,8 +154,9 @@ export function getDefaultMvuAnchorMessageIndex() {
 /**
  * @param {number} anchorIndex
  * @param {MvuChatVariableValues} values
+ * @param {MvuCandidateItem[] | null | undefined} [candidates]
  */
-export async function recordMvuSnapshotAtAnchor(anchorIndex, values) {
+export async function recordMvuSnapshotAtAnchor(anchorIndex, values, candidates) {
     if (anchorIndex < 0 || !chat.length) {
         return;
     }
@@ -142,12 +178,26 @@ export async function recordMvuSnapshotAtAnchor(anchorIndex, values) {
         at: Date.now(),
     };
 
+    if (candidates !== undefined) {
+        entry.candidates = Array.isArray(candidates) ? candidates.map(c => ({ ...c })) : [];
+    } else {
+        const prev = snapshots.find(s => s.anchorIndex === anchorIndex && s.pathKey === pathKey);
+        if (prev && Array.isArray(prev.candidates)) {
+            entry.candidates = prev.candidates.map(c => ({ ...c }));
+        } else if (Array.isArray(binding.candidates)) {
+            entry.candidates = binding.candidates.map(c => ({ ...c }));
+        } else {
+            entry.candidates = [];
+        }
+    }
+
     binding.snapshots.push(entry);
     binding.snapshots.sort((a, b) => a.anchorIndex - b.anchorIndex || a.at - b.at);
     binding.values = { ...payload };
+    binding.candidates = entry.candidates ?? [];
 
     await saveMetadata();
-    floatingMvuDebugTrace('MVU 快照已记录', { anchorIndex, chatLength, pathKey });
+    floatingMvuDebugTrace('MVU 快照已记录', { anchorIndex, chatLength, pathKey, candidateCount: binding.candidates.length });
 }
 
 /**

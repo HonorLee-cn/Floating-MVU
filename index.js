@@ -9,6 +9,7 @@ import { chat, eventSource, event_types } from '../../../../script.js';
 import { isActiveChatContext } from './chat-context.js';
 import { floatingMvuDebugTrace } from './debug-log.js';
 import { getBoundPresetForChat } from './mvu/chat-preset.js';
+import { registerMvuQuietGenerationHooks } from './mvu/mvu-st-generate.js';
 import { runMvuPanelRefresh } from './mvu/mvu-refresh.js';
 import {
     onMvuChatMessagesDeleted,
@@ -20,6 +21,7 @@ import { isPresetAutoUpdateOnMessageReceived } from './mvu/schema.js';
 import { getSettings, registerExtensionSettingsUi } from './settings.js';
 import { applyActiveTheme } from './theme/apply-theme.js';
 import { ensurePackThemes } from './theme/pack-themes.js';
+import { refreshCandidateList, setCandidatesUiHiddenUntilNextUpdate } from './ui/candidate-list.js';
 import { syncFloatingMvuUi } from './ui/dom.js';
 import { clampAllFloatingMvuElements, registerViewportListeners } from './ui/viewport.js';
 
@@ -30,7 +32,9 @@ async function syncTimelineValuesIfConfigured() {
         return;
     }
     await syncMvuValuesToCurrentTimeline('context');
+    setCandidatesUiHiddenUntilNextUpdate(false);
     refreshPanelView();
+    refreshCandidateList();
 }
 
 function onContextChange() {
@@ -82,7 +86,9 @@ async function onMessageDeleted(newChatLength) {
         return;
     }
     await onMvuChatMessagesDeleted(newChatLength);
+    setCandidatesUiHiddenUntilNextUpdate(false);
     refreshPanelView();
+    refreshCandidateList();
 }
 
 /**
@@ -93,12 +99,22 @@ async function onMessageSwiped(mesId) {
         return;
     }
     await onMvuMessageSwiped(mesId);
+    setCandidatesUiHiddenUntilNextUpdate(false);
     refreshPanelView();
+    refreshCandidateList();
+}
+
+function onMessageSent() {
+    if (!getSettings().enabled || !isActiveChatContext() || !getBoundPresetForChat()) {
+        return;
+    }
+    setCandidatesUiHiddenUntilNextUpdate(true);
 }
 
 /** Extension activate hook (see manifest.json). */
 export async function init() {
     getSettings();
+    registerMvuQuietGenerationHooks();
     ensurePackThemes();
     applyActiveTheme();
     registerViewportListeners(() => {
@@ -114,6 +130,7 @@ export async function init() {
     eventSource.on(event_types.MESSAGE_RECEIVED, onMessageReceived);
     eventSource.on(event_types.MESSAGE_DELETED, onMessageDeleted);
     eventSource.on(event_types.MESSAGE_SWIPED, onMessageSwiped);
+    eventSource.on(event_types.MESSAGE_SENT, onMessageSent);
 
     await registerExtensionSettingsUi(syncFloatingMvuUi);
     onContextChange();

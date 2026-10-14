@@ -1,7 +1,10 @@
 import { t } from '../i18n/index.js';
+import { buildMvuCharacterContextBlock } from './character-context.js';
 import {
+    getPresetMaxCandidateCount,
     getPresetVariables,
     getVariableRangeBounds,
+    isPresetAutoCandidateReplies,
 } from './schema.js';
 import { applyMvuTextVariableMacros } from './text-macros.js';
 
@@ -90,8 +93,12 @@ function formatVariableBlock(variable, index, currentValues = {}) {
  * @param {import('./schema.js').MvuVariableNode[]} variables
  * @returns {string}
  */
-function buildExampleFloatingMvuTag(variables) {
-    /** @type {Record<string, string | number>} */
+/**
+ * @param {import('./schema.js').MvuVariableNode[]} variables
+ * @param {import('./schema.js').MvuPreset} preset
+ */
+function buildExampleFloatingMvuTag(variables, preset) {
+    /** @type {Record<string, unknown>} */
     const payload = {};
     for (const variable of variables) {
         const name = String(variable.name ?? '').trim() || t('var.unnamed');
@@ -102,7 +109,42 @@ function buildExampleFloatingMvuTag(variables) {
         }
         payload[name] = t('prompt.exampleValue');
     }
+    if (isPresetAutoCandidateReplies(preset)) {
+        payload._candidates = [
+            { type: 'plot', content: t('prompt.candidates.examplePlot') },
+            { type: 'action', content: t('prompt.candidates.exampleAction') },
+            { type: 'dialogue', content: t('prompt.candidates.exampleDialogue') },
+        ];
+    }
     return `<floating-mvu>${JSON.stringify(payload)}</floating-mvu>`;
+}
+
+/**
+ * @param {import('./schema.js').MvuPreset} preset
+ * @returns {string}
+ */
+export function buildMvuCandidatesPromptBlock(preset) {
+    if (!isPresetAutoCandidateReplies(preset)) {
+        return '';
+    }
+    const count = getPresetMaxCandidateCount(preset);
+    const { charName, userName } = buildMvuCharacterContextBlock();
+    const names = { charName, userName, count };
+    return [
+        t('prompt.section.candidates'),
+        '',
+        t('prompt.candidates.intro', names),
+        '',
+        t('prompt.candidates.audience', names),
+        '',
+        t('prompt.candidates.typesHeader'),
+        t('prompt.candidates.type.plot', names),
+        t('prompt.candidates.type.action', names),
+        t('prompt.candidates.type.dialogue', names),
+        t('prompt.candidates.type.director', names),
+        '',
+        t('prompt.candidates.exampleNote'),
+    ].join('\n');
 }
 
 function getMvuResponseFormatBlock() {
@@ -121,6 +163,22 @@ export function getMvuPromptFormatFooter() {
 
 /**
  * @param {import('./schema.js').MvuPreset} preset
+ * @returns {string}
+ */
+function buildPresetDescriptionPromptBlock(preset) {
+    const desc = applyMvuTextVariableMacros(String(preset.description ?? '').trim());
+    if (!desc) {
+        return '';
+    }
+    return [
+        t('prompt.section.presetDesc'),
+        '',
+        desc,
+    ].join('\n');
+}
+
+/**
+ * @param {import('./schema.js').MvuPreset} preset
  * @param {MvuCurrentValuesMap} [currentValues]
  * @returns {string}
  */
@@ -128,11 +186,23 @@ export function buildMvuDialoguePrompt(preset, currentValues = {}) {
     const variables = getPresetVariables(preset).filter(v => v.varType !== 'image');
 
     /** @type {string[]} */
-    const sections = [t('prompt.prefix'), '', t('prompt.section.variables'), ''];
+    const sections = [t('prompt.prefix')];
+
+    const presetDescBlock = buildPresetDescriptionPromptBlock(preset);
+    if (presetDescBlock) {
+        sections.push('', presetDescBlock);
+    }
+
+    sections.push('', t('prompt.section.variables'), '');
 
     if (!variables.length) {
         sections.push(t('prompt.noVariables'), '');
-        sections.push(getMvuResponseFormatBlock(), '', t('prompt.section.example'), '<floating-mvu>{}</floating-mvu>');
+        sections.push(getMvuResponseFormatBlock());
+        const candidatesBlock = buildMvuCandidatesPromptBlock(preset);
+        if (candidatesBlock) {
+            sections.push('', candidatesBlock);
+        }
+        sections.push('', t('prompt.section.example'), '<floating-mvu>{}</floating-mvu>');
         return sections.join('\n').trim();
     }
 
@@ -142,9 +212,14 @@ export function buildMvuDialoguePrompt(preset, currentValues = {}) {
     });
 
     sections.push(getMvuResponseFormatBlock());
+    const candidatesBlock = buildMvuCandidatesPromptBlock(preset);
+    if (candidatesBlock) {
+        sections.push('');
+        sections.push(candidatesBlock);
+    }
     sections.push('');
     sections.push(t('prompt.section.example'));
-    sections.push(buildExampleFloatingMvuTag(variables));
+    sections.push(buildExampleFloatingMvuTag(variables, preset));
 
     return sections.join('\n').trim();
 }

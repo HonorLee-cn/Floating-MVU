@@ -9,7 +9,9 @@ import { getChatVariableValues, mergeChatVariableValues } from './chat-variables
 import { getDefaultMvuAnchorMessageIndex } from './variable-history.js';
 import { buildMvuUpdateRequestLogForCurrentSettings, callMvuUpdateApi } from './mvu-update-api.js';
 import { buildMvuUpdateRequest } from './mvu-update-request.js';
+import { preprocessMvuAssistantText } from './assistant-text-preprocess.js';
 import { parseFloatingMvuFromAssistantText } from './parse-floating-mvu.js';
+import { refreshCandidateList, setCandidatesUiHiddenUntilNextUpdate } from '../ui/candidate-list.js';
 import { refreshPanelView } from '../ui/panel-views.js';
 import { setMvuUpdateIndicator } from '../ui/update-indicator.js';
 
@@ -70,6 +72,19 @@ export async function runMvuPanelRefresh(options = {}) {
         floatingMvuDebugLog('请求日志（含 URL/body 或 generateRaw 参数）:', apiResult.requestLog);
         floatingMvuDebugLog('rawResponse（完整）:', apiResult.rawResponse);
         floatingMvuDebugLog('assistantText（提取后）:\n', apiResult.assistantText);
+        if (apiResult.assistantTextMeta) {
+            floatingMvuDebugLog('assistantText 提取来源:', apiResult.assistantTextMeta);
+        }
+        if (!String(apiResult.assistantText ?? '').trim()) {
+            floatingMvuDebugWarn(t('err.emptyMvuResponse'), {
+                attemptCount: apiResult.attemptCount,
+                tokens_predicted: apiResult.rawResponse?.tokens_predicted,
+                stop_type: apiResult.rawResponse?.stop_type,
+                generation_settings: apiResult.rawResponse?.generation_settings,
+            });
+        }
+        const preprocessed = preprocessMvuAssistantText(apiResult.assistantText);
+        floatingMvuDebugLog('assistantText（解析用，已去掉 thinking 等）:\n', preprocessed.text);
 
         const parseResult = parseFloatingMvuFromAssistantText(apiResult.assistantText, preset);
 
@@ -94,13 +109,20 @@ export async function runMvuPanelRefresh(options = {}) {
         }
 
         floatingMvuDebugLog('规范化后的待写入值:', parseResult.values);
+        const candidatesToWrite = parseResult.shouldUpdateCandidates ? parseResult.candidates : undefined;
+
         await mergeChatVariableValues(preset, parseResult.values, {
             anchorMessageIndex: anchorMessageIndex >= 0 ? anchorMessageIndex : undefined,
+            candidates: candidatesToWrite,
         });
         const stored = getChatVariableValues();
         floatingMvuDebugLog('写入后 chat_metadata.floating_mvu.values:', stored);
 
+        if (candidatesToWrite !== undefined) {
+            setCandidatesUiHiddenUntilNextUpdate(false);
+        }
         refreshPanelView();
+        refreshCandidateList();
         floatingMvuDebugLog('面板已 refreshPanelView()');
     } catch (err) {
         floatingMvuDebugError('MVU 刷新失败:', err);

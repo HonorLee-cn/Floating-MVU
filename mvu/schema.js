@@ -39,7 +39,24 @@ export const DEFAULT_IMAGE_HEIGHT_PX = 120;
  * @property {number} updatedAt
  * @property {MvuGroupNode} root
  * @property {boolean} [autoUpdateOnMessageReceived] 接收对话后自动更新面板，默认 true
+ * @property {boolean} [autoCandidateReplies] 是否在 MVU 更新时一并生成候选回复，默认 false
+ * @property {number} [maxCandidateCount] 候选条数上限 1~5，默认 3
  */
+
+export const MIN_CANDIDATE_COUNT = 1;
+export const MAX_CANDIDATE_COUNT = 5;
+export const DEFAULT_MAX_CANDIDATE_COUNT = 3;
+export const MAX_CANDIDATE_CONTENT_LENGTH = 20;
+
+/** @typedef {'plot' | 'action' | 'dialogue' | 'director'} MvuCandidateType */
+
+/**
+ * @typedef {object} MvuCandidateItem
+ * @property {MvuCandidateType} type
+ * @property {string} content
+ */
+
+export const MVU_CANDIDATE_TYPES = /** @type {const} */ (['plot', 'action', 'dialogue', 'director']);
 
 /**
  * @returns {MvuGroupNode}
@@ -96,6 +113,8 @@ export function createPreset(overrides = {}) {
         updatedAt: now,
         root: createRootGroup(),
         autoUpdateOnMessageReceived: true,
+        autoCandidateReplies: false,
+        maxCandidateCount: DEFAULT_MAX_CANDIDATE_COUNT,
         ...overrides,
     };
 }
@@ -106,6 +125,26 @@ export function createPreset(overrides = {}) {
  */
 export function isPresetAutoUpdateOnMessageReceived(preset) {
     return preset.autoUpdateOnMessageReceived !== false;
+}
+
+/**
+ * @param {MvuPreset} preset
+ * @returns {boolean}
+ */
+export function isPresetAutoCandidateReplies(preset) {
+    return preset.autoCandidateReplies === true;
+}
+
+/**
+ * @param {MvuPreset} preset
+ * @returns {number}
+ */
+export function getPresetMaxCandidateCount(preset) {
+    const n = Number(preset.maxCandidateCount);
+    if (!Number.isFinite(n)) {
+        return DEFAULT_MAX_CANDIDATE_COUNT;
+    }
+    return Math.min(MAX_CANDIDATE_COUNT, Math.max(MIN_CANDIDATE_COUNT, Math.round(n)));
 }
 
 /**
@@ -265,6 +304,12 @@ export function ensurePresetShape(preset) {
     } else {
         preset.autoUpdateOnMessageReceived = Boolean(preset.autoUpdateOnMessageReceived);
     }
+    if (preset.autoCandidateReplies === undefined) {
+        preset.autoCandidateReplies = false;
+    } else {
+        preset.autoCandidateReplies = Boolean(preset.autoCandidateReplies);
+    }
+    preset.maxCandidateCount = getPresetMaxCandidateCount(preset);
     return preset;
 }
 

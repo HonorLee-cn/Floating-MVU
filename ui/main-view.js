@@ -38,7 +38,6 @@ export function renderMainView($container, options = {}) {
     const variables = getPresetVariables(preset);
     const $main = $(`
         <div class="floating-mvu-main-configured">
-            ${preset.description ? `<p class="floating-mvu-preset-desc-readonly">${escapeHtml(preset.description)}</p>` : ''}
             <div class="floating-mvu-main-tree"></div>
         </div>
     `);

@@ -7,6 +7,7 @@ import { runMvuPanelRefresh } from '../mvu/mvu-refresh.js';
 import { getActiveChatId, getChatAvatarUrl, isActiveChatContext } from '../chat-context.js';
 import { makeDraggable } from './drag.js';
 import { makePanelResizable } from './resize.js';
+import { bindCandidateListFabFollow, refreshCandidateList } from './candidate-list.js';
 import { syncPanelHeaderRefreshButton } from './panel-header-chrome.js';
 import { ensureFabUpdateBadge, ensurePanelTitleChrome } from './title-chrome.js';
 import {
@@ -148,6 +149,7 @@ function bindFabDrag($fab) {
         onDragEnd: () => {
             clampElementToViewport($fab);
             persistElementPosition($fab, 'fab');
+            refreshCandidateList();
         },
     });
 }
@@ -347,6 +349,8 @@ export function syncFloatingMvuUi(options = {}) {
     applyActiveTheme();
     syncPanelHeaderRefreshButton();
     applyPanelChromeI18n();
+    bindCandidateListFabFollow();
+    refreshCandidateList();
 
     requestAnimationFrame(() => clampAllFloatingMvuElements());
 }

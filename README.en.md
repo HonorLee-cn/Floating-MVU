@@ -35,7 +35,8 @@ The model returns updates as `<floating-mvu>{...JSON...}</floating-mvu>` from re
 - **AI updates**: Manual refresh or optional auto-update after **character messages**; prompts follow UI language (zh/en) with footer rules for text variable language.
 - **Dual API paths**: Default SillyTavern generation, or optional **OpenAI-compatible** custom API (`/v1/chat/completions`) plus model list fetch.
 - **Timeline sync**: On message delete or swipe branch change, snapshots restore or drop values so state matches the transcript.
-- **Candidate replies (optional)**: When enabled on a preset, the same MVU JSON may include `_candidates`; a list above the FAB fills `#send_textarea` on click (smart wrapping, no auto-send). Hidden after you send a message until the next successful MVU update.
+- **World Info sync (optional)**: With **Sync state to World Info** on, maintains a **【MVU-VARS】** entry (`constant`, ↓Char) in one target book; refreshes on MVU update, timeline changes, and preset binding; removes the entry when sync is turned off or a variable is excluded.
+- **Candidate replies (optional)**: When **Generate candidate replies** is on and **at least one candidate type** is selected (plot / action / dialogue / director), the MVU JSON may include `_candidates`; a list above the FAB fills `#send_textarea` on click (smart wrapping, no auto-send). Hidden after you send a message until the next successful MVU update.
 - **Themes**: Built-in `default`; create/copy/edit themes (colors, background image, custom CSS), **bound per chat**.
 - **i18n**: Extension UI language (简体中文 / English); settings, panel, editors, and MVU prompts switch with locale.
 - **Debug mode**: Logs assembled prompts, API calls, and parse details in the browser console.
@@ -76,8 +77,8 @@ The model returns updates as `<floating-mvu>{...JSON...}</floating-mvu>` from re
 
 | Area | Description |
 |------|-------------|
-| **Presets** | Create/edit/delete; name, description, auto-update, optional candidate replies and count (1–5). |
-| **Variable types** | **Text**, **long text** (optional max length), **range** (min/max), **image** (URL + height; **not** included in MVU prompt assembly). |
+| **Presets** | Create/edit/delete; name, description, auto-update, optional **Sync state to World Info**, optional candidate replies, four type toggles (at least one required), and count (1–5). |
+| **Variable types** | **Text**, **long text** (optional max length), **range** (min/max), **image** (URL + height; **not** in MVU prompts). With World Info sync on, non-image variables can toggle **Include in World Info** (default on). |
 | **Structure** | Nested groups; add/edit/delete variables and groups; drag to reorder in the config panel. |
 | **Read-only view** | Main panel shows values; full editing is in the preset editor. |
 
@@ -120,7 +121,7 @@ Image variables are **panel-only** and **excluded** from prompt assembly. Change
 
 ### 5.1 Candidate replies
 
-With **Generate candidate replies** on, the prompt asks for `_candidates` in the **same JSON root** as variables (max items = preset limit). Each item:
+With **Generate candidate replies** on and **at least one type** enabled, the prompt asks for `_candidates` in the **same JSON root** as variables (max items = preset limit; `type` must be an enabled type). If the master switch is off or no types are selected, no candidate prompt, no `_candidates` parsing, and no list UI. Each item:
 
 | Field | Description |
 |-------|-------------|
@@ -144,6 +145,20 @@ Example:
 - Candidates are stored in `chat_metadata.floating_mvu.candidates` and timeline snapshots; delete/swipe restores them with variables.
 - UI: above the FAB, right-aligned; click **replaces** `#send_textarea` with smart wrapping. Hidden after `MESSAGE_SENT` until the next successful MVU update.
 
+### 5.2 Sync state to World Info
+
+When **Sync state to World Info** is enabled, the extension upserts one **【MVU-VARS】** entry (`automationId: floating_mvu_vars`) in a **single** target book: **always on** (`constant`), position **↓Char** (after character definition). Content starts with `### {{char}} …` (via ST macros), then one `name:value` line per included variable (text macros match the panel). Non-empty **variable description** is appended after the value as `*description*`. **Range** example: `HP:80(0~100) *Hit points note*`.
+
+**Target book priority** (one book per chat):
+
+1. Chat-specific World Info binding in `chat_metadata`
+2. Current character’s primary World Info book
+3. First book selected in the global World Info list
+
+If none apply, a one-time console log and toastr warning; no write. Each chat stores `{ bookName, entryUid }` in `chat_metadata.floating_mvu.worldInfoRef`.
+
+**Updates run** after successful MVU writes, message delete/swipe, chat load/switch (timeline sync), and preset binding changes. Turning preset sync off removes the entry. Per-variable **Include in World Info** excludes that line from content.
+
 ### 6. Themes (palette)
 
 | Area | Description |
@@ -164,18 +179,29 @@ Example:
 | Data | Location |
 |------|----------|
 | Extension settings, preset list, custom themes | `extension_settings.floating_mvu` |
-| Bound preset ID, theme ID, values, candidates, snapshots | That chat’s `chat_metadata.floating_mvu` |
+| Bound preset ID, theme ID, values, candidates, snapshots, World Info entry ref | That chat’s `chat_metadata.floating_mvu` (incl. `worldInfoRef`) |
 
 ### Manual test checklist (candidate replies)
 
 - [ ] Candidates off: MVU refresh works; no list UI.
-- [ ] Candidates on, N=1 / 5: prompt mentions `_candidates`; parsed count ≤ N.
+- [ ] Candidates on but all four types off: no candidate prompt, no parsing, no list.
+- [ ] Subset of types only: prompt lists those types; disallowed `type` entries skipped on parse.
+- [ ] Candidates on with ≥1 type, N=1 / 5: prompt mentions `_candidates`; parsed count ≤ N.
 - [ ] Model omits `_candidates`: variables still update; list unchanged.
 - [ ] Overlong `content` or invalid `type`: console warnings; bad items skipped.
 - [ ] Click each type: `[]` / `*action*` / quotes / `()` wrapping; no double-wrap when already present.
 - [ ] After sending a user message, list hides; shows again after next successful MVU update.
 - [ ] Delete message or swipe branch: variables and candidates restore from snapshot.
 - [ ] Manual refresh on custom API and built-in SillyTavern paths.
+
+### Manual test checklist (World Info sync)
+
+- [ ] No available World Info book: enabling sync does not crash; user sees a warning.
+- [ ] Sync on with at least one included variable: after MVU refresh, 【MVU-VARS】 appears with `constant` + ↓Char; content format is correct.
+- [ ] Per-variable **Include in World Info** off: that line is omitted from content.
+- [ ] Preset sync off: entry removed; no further updates.
+- [ ] Message delete / swipe: content matches panel values.
+- [ ] Switch chat / change preset: each chat’s `worldInfoRef` stays isolated.
 
 ---
 

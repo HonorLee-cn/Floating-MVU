@@ -33,9 +33,10 @@ export async function setChatCandidates(items) {
 /**
  * @param {unknown} raw
  * @param {number} maxCount
+ * @param {import('./schema.js').MvuCandidateType[]} [allowedTypes]
  * @returns {{ items: MvuCandidateItem[], warnings: string[] }}
  */
-export function normalizeCandidatesFromPayload(raw, maxCount) {
+export function normalizeCandidatesFromPayload(raw, maxCount, allowedTypes) {
     /** @type {MvuCandidateItem[]} */
     const items = [];
     /** @type {string[]} */
@@ -50,6 +51,9 @@ export function normalizeCandidatesFromPayload(raw, maxCount) {
     }
 
     const limit = Math.max(1, Math.min(5, Math.floor(maxCount)));
+    const allowedSet = Array.isArray(allowedTypes) && allowedTypes.length
+        ? new Set(allowedTypes)
+        : null;
 
     for (let i = 0; i < raw.length && items.length < limit; i++) {
         const entry = raw[i];
@@ -62,6 +66,10 @@ export function normalizeCandidatesFromPayload(raw, maxCount) {
         const type = String(typeRaw ?? '').trim();
         if (!MVU_CANDIDATE_TYPES.includes(/** @type {MvuCandidateType} */ (type))) {
             warnings.push(`候选 #${i + 1} type 非法：${type}`);
+            continue;
+        }
+        if (allowedSet && !allowedSet.has(/** @type {MvuCandidateType} */ (type))) {
+            warnings.push(`候选 #${i + 1} type「${type}」未在预设中启用，已跳过`);
             continue;
         }
         let content = String(contentRaw ?? '').trim();

@@ -1,6 +1,7 @@
 import { chat, saveMetadata } from '../../../../../script.js';
 import { floatingMvuDebugTrace } from '../debug-log.js';
-import { ensureChatBindingObject } from './chat-preset.js';
+import { ensureChatBindingObject, getBoundPresetForChat } from './chat-preset.js';
+import { scheduleWorldInfoSync } from './world-info-sync.js';
 
 /** @typedef {Record<string, string | number>} MvuChatVariableValues */
 /** @typedef {import('./schema.js').MvuCandidateItem} MvuCandidateItem */
@@ -130,6 +131,11 @@ export async function syncMvuValuesToCurrentTimeline(reason = 'timeline') {
         keys: Object.keys(resolved),
         candidateCount: binding.candidates.length,
     });
+
+    const preset = getBoundPresetForChat();
+    if (preset) {
+        scheduleWorldInfoSync(preset);
+    }
 }
 
 /**

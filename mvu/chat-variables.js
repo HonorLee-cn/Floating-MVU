@@ -99,6 +99,8 @@ export async function mergeChatVariableValues(preset, patch, options = {}) {
     const candidates = options.candidates;
     if (typeof anchorIndex === 'number' && anchorIndex >= 0) {
         await recordMvuSnapshotAtAnchor(anchorIndex, merged, candidates);
+        const { scheduleWorldInfoSync } = await import('./world-info-sync.js');
+        scheduleWorldInfoSync(preset);
         return;
     }
 
@@ -107,4 +109,6 @@ export async function mergeChatVariableValues(preset, patch, options = {}) {
         binding.candidates = Array.isArray(candidates) ? candidates : [];
     }
     await saveMetadata();
+    const { scheduleWorldInfoSync } = await import('./world-info-sync.js');
+    scheduleWorldInfoSync(preset);
 }

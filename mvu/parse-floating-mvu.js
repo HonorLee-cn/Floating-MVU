@@ -7,7 +7,11 @@ import {
     stripCandidatesFromMvuPayload,
 } from './chat-candidates.js';
 import { normalizeMvuPayloadForPreset } from './chat-variables.js';
-import { getPresetMaxCandidateCount, isPresetAutoCandidateReplies } from './schema.js';
+import {
+    getPresetEnabledCandidateTypes,
+    getPresetMaxCandidateCount,
+    isPresetCandidatesEnabled,
+} from './schema.js';
 
 const FLOATING_MVU_STRICT_RE = /<floating-mvu>\s*([\s\S]*?)\s*<\/floating-mvu>/gi;
 const FLOATING_MVU_OPEN_RE = /<floating-mvu>\s*/gi;
@@ -208,7 +212,7 @@ export function parseFloatingMvuFromAssistantText(assistantText, preset) {
 
     const payload = /** @type {Record<string, unknown>} */ (parsed);
     const maxCount = getPresetMaxCandidateCount(preset);
-    const wantCandidates = isPresetAutoCandidateReplies(preset);
+    const wantCandidates = isPresetCandidatesEnabled(preset);
 
     /** @type {import('./schema.js').MvuCandidateItem[] | undefined} */
     let candidates;
@@ -219,7 +223,11 @@ export function parseFloatingMvuFromAssistantText(assistantText, preset) {
 
     if (wantCandidates && '_candidates' in payload) {
         shouldUpdateCandidates = true;
-        const normalized = normalizeCandidatesFromPayload(payload._candidates, maxCount);
+        const normalized = normalizeCandidatesFromPayload(
+            payload._candidates,
+            maxCount,
+            getPresetEnabledCandidateTypes(preset),
+        );
         candidates = normalized.items;
         candidateWarnings.push(...normalized.warnings);
     }

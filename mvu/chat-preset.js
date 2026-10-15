@@ -1,5 +1,10 @@
 import { chat_metadata, saveMetadata } from '../../../../../script.js';
 import { getPresetById } from './preset-store.js';
+import { isPresetWorldInfoSyncEnabled } from './schema.js';
+import {
+    removeMvuWorldInfoEntry,
+    syncMvuWorldInfoFromChatImmediate,
+} from './world-info-sync.js';
 
 const METADATA_KEY = 'floating_mvu';
 
@@ -8,7 +13,14 @@ const METADATA_KEY = 'floating_mvu';
  */
 function ensureChatBindingObject() {
     if (!chat_metadata[METADATA_KEY] || typeof chat_metadata[METADATA_KEY] !== 'object') {
-        chat_metadata[METADATA_KEY] = { presetId: null, themeId: null, values: {}, candidates: [], snapshots: [] };
+        chat_metadata[METADATA_KEY] = {
+            presetId: null,
+            themeId: null,
+            values: {},
+            candidates: [],
+            snapshots: [],
+            worldInfoRef: null,
+        };
     }
     if (chat_metadata[METADATA_KEY].presetId === undefined) {
         chat_metadata[METADATA_KEY].presetId = null;
@@ -24,6 +36,10 @@ function ensureChatBindingObject() {
     }
     if (!Array.isArray(chat_metadata[METADATA_KEY].candidates)) {
         chat_metadata[METADATA_KEY].candidates = [];
+    }
+    const ref = chat_metadata[METADATA_KEY].worldInfoRef;
+    if (ref !== null && ref !== undefined && (typeof ref !== 'object' || !ref)) {
+        chat_metadata[METADATA_KEY].worldInfoRef = null;
     }
     return chat_metadata[METADATA_KEY];
 }
@@ -49,6 +65,13 @@ export async function setChatPresetId(presetId) {
     const binding = ensureChatBindingObject();
     binding.presetId = presetId;
     await saveMetadata();
+
+    const newPreset = presetId ? getPresetById(presetId) : null;
+    if (newPreset && isPresetWorldInfoSyncEnabled(newPreset)) {
+        await syncMvuWorldInfoFromChatImmediate(newPreset);
+    } else {
+        await removeMvuWorldInfoEntry();
+    }
 }
 
 /**

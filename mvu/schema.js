@@ -10,8 +10,10 @@ import { uuidv4 } from '../../../../utils.js';
  * @property {number} [textMaxLength] 长文本最大字数；未设置表示不限制
  * @property {number} [rangeMin] 范围数值下限，默认 0
  * @property {number} [rangeMax] 范围数值上限，默认 100
+ * @property {string} [rangeFillColor] 进度条填充色，覆盖主题默认渐变
  * @property {string} [imageUrl] 图片 URL（image 类型）
  * @property {number} [imageHeightPx] 图片显示高度 px（image 类型）
+ * @property {boolean} [includeInWorldInfo] 是否写入世界书 MVU-VARS 条目，默认 true（image 不参与）
  */
 
 export const DEFAULT_RANGE_MIN = 0;
@@ -41,6 +43,8 @@ export const DEFAULT_IMAGE_HEIGHT_PX = 120;
  * @property {boolean} [autoUpdateOnMessageReceived] 接收对话后自动更新面板，默认 true
  * @property {boolean} [autoCandidateReplies] 是否在 MVU 更新时一并生成候选回复，默认 false
  * @property {number} [maxCandidateCount] 候选条数上限 1~5，默认 3
+ * @property {Partial<Record<MvuCandidateType, boolean>>} [candidateTypes] 各候选类型是否参与 MVU 生成
+ * @property {boolean} [syncVariablesToWorldInfo] 是否将变量状态同步到世界书 MVU-VARS 条目
  */
 
 export const MIN_CANDIDATE_COUNT = 1;
@@ -57,6 +61,21 @@ export const MAX_CANDIDATE_CONTENT_LENGTH = 20;
  */
 
 export const MVU_CANDIDATE_TYPES = /** @type {const} */ (['plot', 'action', 'dialogue', 'director']);
+
+/**
+ * @param {boolean} [allEnabled=true]
+ * @returns {Record<MvuCandidateType, boolean>}
+ */
+export function createDefaultCandidateTypes(allEnabled = true) {
+    /** @type {Record<MvuCandidateType, boolean>} */
+    const map = {
+        plot: allEnabled,
+        action: allEnabled,
+        dialogue: allEnabled,
+        director: allEnabled,
+    };
+    return map;
+}
 
 /**
  * @returns {MvuGroupNode}
@@ -96,6 +115,7 @@ export function createVariable(overrides = {}) {
         name: '',
         varType: 'text',
         description: '',
+        includeInWorldInfo: true,
         ...overrides,
     };
 }
@@ -115,6 +135,8 @@ export function createPreset(overrides = {}) {
         autoUpdateOnMessageReceived: true,
         autoCandidateReplies: false,
         maxCandidateCount: DEFAULT_MAX_CANDIDATE_COUNT,
+        candidateTypes: createDefaultCandidateTypes(true),
+        syncVariablesToWorldInfo: false,
         ...overrides,
     };
 }
@@ -133,6 +155,46 @@ export function isPresetAutoUpdateOnMessageReceived(preset) {
  */
 export function isPresetAutoCandidateReplies(preset) {
     return preset.autoCandidateReplies === true;
+}
+
+/**
+ * @param {MvuPreset} preset
+ * @returns {MvuCandidateType[]}
+ */
+export function getPresetEnabledCandidateTypes(preset) {
+    const types = preset.candidateTypes;
+    if (!types || typeof types !== 'object') {
+        return [];
+    }
+    return MVU_CANDIDATE_TYPES.filter(type => types[type] === true);
+}
+
+/**
+ * @param {MvuPreset} preset
+ * @returns {boolean}
+ */
+export function isPresetCandidatesEnabled(preset) {
+    return isPresetAutoCandidateReplies(preset) && getPresetEnabledCandidateTypes(preset).length > 0;
+}
+
+/**
+ * @param {MvuPreset} preset
+ * @returns {boolean}
+ */
+export function isPresetWorldInfoSyncEnabled(preset) {
+    return preset.syncVariablesToWorldInfo === true;
+}
+
+/**
+ * @param {MvuPreset} preset
+ * @returns {MvuVariableNode[]}
+ */
+export function getVariablesForWorldInfo(preset) {
+    return getPresetVariables(preset).filter(v =>
+        v.varType !== 'image'
+        && v.includeInWorldInfo !== false
+        && String(v.name ?? '').trim(),
+    );
 }
 
 /**
@@ -178,6 +240,24 @@ export function getVariableRangeBounds(variable) {
 }
 
 /**
+ * @param {unknown} raw
+ * @returns {string | null}
+ */
+function normalizeRangeFillColorStored(raw) {
+    const trimmed = String(raw ?? '').trim();
+    if (!trimmed) {
+        return null;
+    }
+    if (/^#[0-9a-fA-F]{6}$/i.test(trimmed)) {
+        return trimmed.toLowerCase();
+    }
+    if (/^rgba?\(/i.test(trimmed)) {
+        return trimmed;
+    }
+    return null;
+}
+
+/**
  * @param {MvuVariableNode} variable
  * @returns {number}
  */
@@ -207,6 +287,7 @@ function normalizeVariableTypeOptions(variable) {
         }
         delete variable.rangeMin;
         delete variable.rangeMax;
+        delete variable.rangeFillColor;
         delete variable.imageUrl;
         delete variable.imageHeightPx;
         return;
@@ -220,22 +301,35 @@ function normalizeVariableTypeOptions(variable) {
         variable.rangeMax = bounds.max;
         delete variable.imageUrl;
         delete variable.imageHeightPx;
+        const fill = normalizeRangeFillColorStored(variable.rangeFillColor);
+        if (fill) {
+            variable.rangeFillColor = fill;
+        } else {
+            delete variable.rangeFillColor;
+        }
         return;
     }
 
     delete variable.rangeMin;
     delete variable.rangeMax;
+    delete variable.rangeFillColor;
 
     if (variable.varType === 'image') {
         variable.name = '';
         variable.description = '';
         variable.imageUrl = typeof variable.imageUrl === 'string' ? variable.imageUrl.trim() : '';
         variable.imageHeightPx = getVariableImageHeightPx(variable);
+        delete variable.includeInWorldInfo;
         return;
     }
 
     delete variable.imageUrl;
     delete variable.imageHeightPx;
+    if (variable.includeInWorldInfo === undefined) {
+        variable.includeInWorldInfo = true;
+    } else {
+        variable.includeInWorldInfo = Boolean(variable.includeInWorldInfo);
+    }
 }
 
 function ensureVariableShape(variable) {
@@ -310,6 +404,22 @@ export function ensurePresetShape(preset) {
         preset.autoCandidateReplies = Boolean(preset.autoCandidateReplies);
     }
     preset.maxCandidateCount = getPresetMaxCandidateCount(preset);
+    if (!preset.candidateTypes || typeof preset.candidateTypes !== 'object') {
+        const legacyAllOn = preset.autoCandidateReplies === true;
+        preset.candidateTypes = createDefaultCandidateTypes(legacyAllOn);
+    } else {
+        /** @type {Record<MvuCandidateType, boolean>} */
+        const normalized = createDefaultCandidateTypes(false);
+        for (const type of MVU_CANDIDATE_TYPES) {
+            normalized[type] = preset.candidateTypes[type] === true;
+        }
+        preset.candidateTypes = normalized;
+    }
+    if (preset.syncVariablesToWorldInfo === undefined) {
+        preset.syncVariablesToWorldInfo = false;
+    } else {
+        preset.syncVariablesToWorldInfo = Boolean(preset.syncVariablesToWorldInfo);
+    }
     return preset;
 }
 
@@ -495,7 +605,11 @@ export function removeVariableFromGroup(group, variableId) {
  * @returns {boolean}
  */
 export function removeVariableFromPreset(preset, variableId) {
-    return removeVariableFromGroup(preset.root, variableId);
+    const parent = findParentGroupOfChild(preset.root, variableId);
+    if (!parent) {
+        return false;
+    }
+    return removeVariableFromGroup(parent, variableId);
 }
 
 /**

@@ -5,9 +5,12 @@ import {
     findVariableInPreset,
     getVariableImageHeightPx,
     getVariableRangeBounds,
+    isPresetWorldInfoSyncEnabled,
     normalizeVariableType,
     removeVariableFromPreset,
 } from '../mvu/schema.js';
+import { scheduleWorldInfoSync } from '../mvu/world-info-sync.js';
+import { getVariableRangeFillStyleAttr, toColorInputValue } from './color-utils.js';
 
 /**
  * @typedef {object} VariableEditorOptions
@@ -65,8 +68,9 @@ export function renderVariableBlockHtml(variable, options = {}) {
         const { min, max } = getVariableRangeBounds(variable);
         const span = max > min ? max - min : 1;
         const pct = Math.min(100, Math.max(0, ((displayValue - min) / span) * 100));
+        const rangeFillStyle = getVariableRangeFillStyleAttr(variable);
         return `
-            <div class="floating-mvu-var-block floating-mvu-var-block--range" data-variable-id="${idAttr}"${titleAttr}>
+            <div class="floating-mvu-var-block floating-mvu-var-block--range" data-variable-id="${idAttr}"${rangeFillStyle}${titleAttr}>
                 <div class="floating-mvu-var-range-fill" style="width: ${pct}%"></div>
                 <div class="floating-mvu-var-block-row">
                     <span class="floating-mvu-var-block-name">${name}</span>
@@ -187,6 +191,12 @@ export function openVariableEditor($host, preset, variableId, options = {}) {
                         <input type="number" step="any" class="text_pole floating-mvu-var-range-min" placeholder="${escapeHtml(t('var.rangeMin'))}" aria-label="${escapeHtml(t('var.rangeMin'))}" />
                         <input type="number" step="any" class="text_pole floating-mvu-var-range-max" placeholder="${escapeHtml(t('var.rangeMax'))}" aria-label="${escapeHtml(t('var.rangeMax'))}" />
                     </div>
+                    <label class="marginTop5">${escapeHtml(t('var.rangeBarColor'))}</label>
+                    <div class="floating-mvu-var-range-color-row flex-container flexGap5 alignItemsCenter">
+                        <button type="button" class="floating-mvu-var-range-color-swatch is-theme-default" title="${escapeHtml(t('var.rangeBarColorPick'))}" aria-label="${escapeHtml(t('var.rangeBarColorPick'))}"></button>
+                        <input type="color" class="floating-mvu-var-range-color-input" tabindex="-1" aria-hidden="true" />
+                        <button type="button" class="menu_button floating-mvu-var-range-color-reset">${escapeHtml(t('var.rangeBarColorUseTheme'))}</button>
+                    </div>
                 </div>
                 <div class="floating-mvu-var-type-panel floating-mvu-var-type-panel-image">
                     <label>${escapeHtml(t('var.imageUrl'))}</label>
@@ -197,6 +207,12 @@ export function openVariableEditor($host, preset, variableId, options = {}) {
                 <div class="floating-mvu-var-field-desc">
                     <label>${escapeHtml(t('var.description'))}</label>
                     <textarea class="text_pole wide100p floating-mvu-var-desc" rows="3"></textarea>
+                </div>
+                <div class="floating-mvu-var-field-world-info floating-mvu-preset-auto-update-box">
+                    <label class="checkbox_label floating-mvu-preset-auto-update-label">
+                        <input type="checkbox" class="floating-mvu-var-include-world-info" />
+                        <span>${escapeHtml(t('var.includeInWorldInfo'))}</span>
+                    </label>
                 </div>
                 <div class="flex-container flexGap5 marginTop5">
                     <button type="button" class="menu_button floating-mvu-var-save">${escapeHtml(t('var.save'))}</button>
@@ -215,6 +231,10 @@ export function openVariableEditor($host, preset, variableId, options = {}) {
     const $fieldName = overlay.find('.floating-mvu-var-field-name');
     const $fieldDesc = overlay.find('.floating-mvu-var-field-desc');
 
+    const $fieldWorldInfo = overlay.find('.floating-mvu-var-field-world-info');
+    const $includeWorldInfo = overlay.find('.floating-mvu-var-include-world-info');
+    const worldInfoSyncEnabled = isPresetWorldInfoSyncEnabled(preset);
+
     const syncTypePanels = () => {
         const type = normalizeVariableType(String($typeSelect.val()));
         const isImage = type === 'image';
@@ -223,6 +243,7 @@ export function openVariableEditor($host, preset, variableId, options = {}) {
         $panelImage.toggleClass('is-visible', isImage);
         $fieldName.toggleClass('is-hidden', isImage);
         $fieldDesc.toggleClass('is-hidden', isImage);
+        $fieldWorldInfo.toggleClass('is-hidden', isImage || !worldInfoSyncEnabled);
         overlay.find('.floating-mvu-var-editor-title').text(isImage ? t('presetEditor.editImage') : t('presetEditor.editVar'));
     };
 
@@ -238,8 +259,37 @@ export function openVariableEditor($host, preset, variableId, options = {}) {
     overlay.find('.floating-mvu-var-range-min').val(String(rangeBounds.min));
     overlay.find('.floating-mvu-var-range-max').val(String(rangeBounds.max));
 
+    const $rangeColorSwatch = overlay.find('.floating-mvu-var-range-color-swatch');
+    const $rangeColorInput = overlay.find('.floating-mvu-var-range-color-input');
+    const $rangeColorReset = overlay.find('.floating-mvu-var-range-color-reset');
+    let rangeUsesThemeDefault = !String(variable.rangeFillColor ?? '').trim();
+    const syncRangeColorSwatch = () => {
+        if (rangeUsesThemeDefault) {
+            $rangeColorSwatch.addClass('is-theme-default').css('background', '');
+            $rangeColorReset.prop('disabled', true);
+        } else {
+            const hex = String($rangeColorInput.val());
+            $rangeColorSwatch.removeClass('is-theme-default').css('background', hex);
+            $rangeColorReset.prop('disabled', false);
+        }
+    };
+    $rangeColorInput.val(toColorInputValue(variable.rangeFillColor ?? '#64a0ff'));
+    syncRangeColorSwatch();
+    $rangeColorSwatch.on('click', () => {
+        $rangeColorInput.trigger('click');
+    });
+    $rangeColorInput.on('input', () => {
+        rangeUsesThemeDefault = false;
+        syncRangeColorSwatch();
+    });
+    $rangeColorReset.on('click', () => {
+        rangeUsesThemeDefault = true;
+        syncRangeColorSwatch();
+    });
+
     overlay.find('.floating-mvu-var-image-url').val(variable.imageUrl ?? '');
     overlay.find('.floating-mvu-var-image-height').val(String(getVariableImageHeightPx(variable)));
+    $includeWorldInfo.prop('checked', variable.includeInWorldInfo !== false);
 
     $typeSelect.on('change', syncTypePanels);
     syncTypePanels();
@@ -264,6 +314,7 @@ export function openVariableEditor($host, preset, variableId, options = {}) {
             }
             delete variable.rangeMin;
             delete variable.rangeMax;
+            delete variable.rangeFillColor;
             delete variable.imageUrl;
             delete variable.imageHeightPx;
         } else if (variable.varType === 'range') {
@@ -274,6 +325,11 @@ export function openVariableEditor($host, preset, variableId, options = {}) {
             }
             variable.rangeMin = min;
             variable.rangeMax = max;
+            if (rangeUsesThemeDefault) {
+                delete variable.rangeFillColor;
+            } else {
+                variable.rangeFillColor = String($rangeColorInput.val()).trim();
+            }
             delete variable.textMaxLength;
             delete variable.imageUrl;
             delete variable.imageHeightPx;
@@ -284,17 +340,26 @@ export function openVariableEditor($host, preset, variableId, options = {}) {
             delete variable.textMaxLength;
             delete variable.rangeMin;
             delete variable.rangeMax;
+            delete variable.rangeFillColor;
         } else {
             delete variable.textMaxLength;
             delete variable.rangeMin;
             delete variable.rangeMax;
+            delete variable.rangeFillColor;
             delete variable.imageUrl;
             delete variable.imageHeightPx;
+        }
+
+        if (variable.varType !== 'image' && worldInfoSyncEnabled) {
+            variable.includeInWorldInfo = $includeWorldInfo.prop('checked');
         }
 
         overlay.remove();
         options.onSaved?.();
         options.onClose?.();
+        if (worldInfoSyncEnabled) {
+            scheduleWorldInfoSync(preset);
+        }
     });
 
     overlay.find('.floating-mvu-var-delete').on('click', () => {
@@ -302,6 +367,9 @@ export function openVariableEditor($host, preset, variableId, options = {}) {
         overlay.remove();
         options.onDeleted?.();
         options.onClose?.();
+        if (worldInfoSyncEnabled) {
+            scheduleWorldInfoSync(preset);
+        }
     });
 
     overlay.find('.floating-mvu-var-cancel').on('click', () => {

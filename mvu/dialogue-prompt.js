@@ -1,10 +1,11 @@
 import { t } from '../i18n/index.js';
 import { buildMvuCharacterContextBlock } from './character-context.js';
 import {
+    getPresetEnabledCandidateTypes,
     getPresetMaxCandidateCount,
     getPresetVariables,
     getVariableRangeBounds,
-    isPresetAutoCandidateReplies,
+    isPresetCandidatesEnabled,
 } from './schema.js';
 import { applyMvuTextVariableMacros } from './text-macros.js';
 
@@ -97,6 +98,22 @@ function formatVariableBlock(variable, index, currentValues = {}) {
  * @param {import('./schema.js').MvuVariableNode[]} variables
  * @param {import('./schema.js').MvuPreset} preset
  */
+/** @type {Record<import('./schema.js').MvuCandidateType, string>} */
+const CANDIDATE_EXAMPLE_I18N_KEY = {
+    plot: 'prompt.candidates.examplePlot',
+    action: 'prompt.candidates.exampleAction',
+    dialogue: 'prompt.candidates.exampleDialogue',
+    director: 'prompt.candidates.exampleDirector',
+};
+
+/** @type {Record<import('./schema.js').MvuCandidateType, string>} */
+const CANDIDATE_TYPE_PROMPT_I18N_KEY = {
+    plot: 'prompt.candidates.type.plot',
+    action: 'prompt.candidates.type.action',
+    dialogue: 'prompt.candidates.type.dialogue',
+    director: 'prompt.candidates.type.director',
+};
+
 function buildExampleFloatingMvuTag(variables, preset) {
     /** @type {Record<string, unknown>} */
     const payload = {};
@@ -109,12 +126,11 @@ function buildExampleFloatingMvuTag(variables, preset) {
         }
         payload[name] = t('prompt.exampleValue');
     }
-    if (isPresetAutoCandidateReplies(preset)) {
-        payload._candidates = [
-            { type: 'plot', content: t('prompt.candidates.examplePlot') },
-            { type: 'action', content: t('prompt.candidates.exampleAction') },
-            { type: 'dialogue', content: t('prompt.candidates.exampleDialogue') },
-        ];
+    if (isPresetCandidatesEnabled(preset)) {
+        payload._candidates = getPresetEnabledCandidateTypes(preset).map(type => ({
+            type,
+            content: t(CANDIDATE_EXAMPLE_I18N_KEY[type]),
+        }));
     }
     return `<floating-mvu>${JSON.stringify(payload)}</floating-mvu>`;
 }
@@ -124,12 +140,16 @@ function buildExampleFloatingMvuTag(variables, preset) {
  * @returns {string}
  */
 export function buildMvuCandidatesPromptBlock(preset) {
-    if (!isPresetAutoCandidateReplies(preset)) {
+    const enabledTypes = getPresetEnabledCandidateTypes(preset);
+    if (!isPresetCandidatesEnabled(preset)) {
         return '';
     }
     const count = getPresetMaxCandidateCount(preset);
     const { charName, userName } = buildMvuCharacterContextBlock();
-    const names = { charName, userName, count };
+    const allowedTypes = enabledTypes.join(' | ');
+    const names = { charName, userName, count, allowedTypes };
+    /** @type {string[]} */
+    const typeLines = enabledTypes.map(type => t(CANDIDATE_TYPE_PROMPT_I18N_KEY[type], names));
     return [
         t('prompt.section.candidates'),
         '',
@@ -138,10 +158,7 @@ export function buildMvuCandidatesPromptBlock(preset) {
         t('prompt.candidates.audience', names),
         '',
         t('prompt.candidates.typesHeader'),
-        t('prompt.candidates.type.plot', names),
-        t('prompt.candidates.type.action', names),
-        t('prompt.candidates.type.dialogue', names),
-        t('prompt.candidates.type.director', names),
+        ...typeLines,
         '',
         t('prompt.candidates.exampleNote'),
     ].join('\n');

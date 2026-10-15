@@ -5,7 +5,7 @@ import {
     wrapCandidateContentForSendTextarea,
 } from '../mvu/chat-candidates.js';
 import { getBoundPresetForChat } from '../mvu/chat-preset.js';
-import { isPresetAutoCandidateReplies } from '../mvu/schema.js';
+import { isPresetCandidatesEnabled } from '../mvu/schema.js';
 import { FAB_ID, ROOT_ID } from '../settings.js';
 
 export const CANDIDATE_LIST_ID = 'floating_mvu_candidate_list';
@@ -79,7 +79,7 @@ export function refreshCandidateList() {
     const items = getChatCandidates();
     const shouldShow = Boolean(
         preset
-        && isPresetAutoCandidateReplies(preset)
+        && isPresetCandidatesEnabled(preset)
         && items.length
         && !candidatesUiHiddenUntilNextUpdate,
     );

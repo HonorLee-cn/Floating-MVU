@@ -14,7 +14,6 @@ import { runMvuPanelRefresh } from './mvu/mvu-refresh.js';
 import {
     onMvuChatMessagesDeleted,
     onMvuMessageSwiped,
-    syncMvuValuesToCurrentTimeline,
 } from './mvu/variable-history.js';
 import { refreshPanelView } from './ui/panel-views.js';
 import { isPresetAutoUpdateOnMessageReceived } from './mvu/schema.js';
@@ -27,19 +26,8 @@ import { clampAllFloatingMvuElements, registerViewportListeners } from './ui/vie
 
 export const MODULE_NAME = 'FloatingMVU';
 
-async function syncTimelineValuesIfConfigured() {
-    if (!getSettings().enabled || !isActiveChatContext() || !getBoundPresetForChat()) {
-        return;
-    }
-    await syncMvuValuesToCurrentTimeline('context');
-    setCandidatesUiHiddenUntilNextUpdate(false);
-    refreshPanelView();
-    refreshCandidateList();
-}
-
 function onContextChange() {
     syncFloatingMvuUi();
-    void syncTimelineValuesIfConfigured();
 }
 
 function onChatRemoved() {
@@ -60,7 +48,7 @@ function onMessageReceived(messageId, type) {
         return;
     }
 
-    if (type === 'impersonate') {
+    if (type === 'impersonate' || type === 'first_message') {
         return;
     }
 

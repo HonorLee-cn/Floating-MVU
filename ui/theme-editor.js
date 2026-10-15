@@ -13,25 +13,7 @@ import {
     parsePanelBgImageUrl,
 } from '../theme/tokens.js';
 import { resolveTheme, setActiveThemeId, upsertCustomTheme } from '../theme/theme-store.js';
-
-/**
- * @param {string} cssColor
- * @returns {string}
- */
-function toColorInputValue(cssColor) {
-    const hex = cssColor.trim();
-    if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
-        return hex;
-    }
-    const m = hex.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-    if (!m) {
-        return '#808080';
-    }
-    const r = Number(m[1]).toString(16).padStart(2, '0');
-    const g = Number(m[2]).toString(16).padStart(2, '0');
-    const b = Number(m[3]).toString(16).padStart(2, '0');
-    return `#${r}${g}${b}`;
-}
+import { toColorInputValue } from './color-utils.js';
 
 /**
  * @param {string} themeId

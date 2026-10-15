@@ -1,7 +1,12 @@
 import { Popup, POPUP_RESULT, POPUP_TYPE } from '../../../../popup.js';
 import { t } from '../i18n/index.js';
 import { createDraftPreset, deletePreset, upsertPreset } from '../mvu/preset-store.js';
-import { ensurePresetShape } from '../mvu/schema.js';
+import { getChatPresetId } from '../mvu/chat-preset.js';
+import { ensurePresetShape, isPresetWorldInfoSyncEnabled, MVU_CANDIDATE_TYPES } from '../mvu/schema.js';
+import {
+    removeMvuWorldInfoEntry,
+    syncMvuWorldInfoFromChatImmediate,
+} from '../mvu/world-info-sync.js';
 import { renderConfigPanel } from './config-panel.js';
 
 /**
@@ -23,6 +28,7 @@ export async function openPresetEditor(presetId, options = {}) {
         : structuredClone(getPresetById(presetId) ?? createDraftPreset());
 
     ensurePresetShape(preset);
+    const initialSyncWorldInfo = isPresetWorldInfoSyncEnabled(preset);
 
     const $dialog = $(`
         <div class="floating-mvu-preset-editor">
@@ -38,13 +44,32 @@ export async function openPresetEditor(presetId, options = {}) {
             </div>
             <div class="floating-mvu-preset-auto-update-box">
                 <label class="checkbox_label floating-mvu-preset-auto-update-label">
+                    <input type="checkbox" class="floating-mvu-preset-sync-world-info" />
+                    <span>${t('presetEditor.syncWorldInfo')}</span>
+                </label>
+            </div>
+            <div class="floating-mvu-preset-auto-update-box">
+                <label class="checkbox_label floating-mvu-preset-auto-update-label">
                     <input type="checkbox" class="floating-mvu-preset-candidates" />
                     <span>${t('presetEditor.candidateReplies')}</span>
                 </label>
-                <div class="floating-mvu-preset-candidate-count-row">
-                    <label class="floating-mvu-preset-candidate-count-label">${t('presetEditor.candidateCount')}</label>
-                    <input type="range" class="floating-mvu-preset-candidate-count" min="1" max="5" step="1" />
-                    <span class="floating-mvu-preset-candidate-count-value"></span>
+                <div class="floating-mvu-preset-candidate-options">
+                    <div class="floating-mvu-preset-candidate-types-row">
+                        <span class="floating-mvu-preset-candidate-types-label">${t('presetEditor.candidateTypes')}</span>
+                        <div class="floating-mvu-preset-candidate-types-flex" role="group" aria-label="${t('presetEditor.candidateTypes')}">
+                            ${MVU_CANDIDATE_TYPES.map(type => `
+                                <label class="floating-mvu-preset-candidate-type-toggle">
+                                    <input type="checkbox" class="floating-mvu-preset-candidate-type" data-candidate-type="${type}" />
+                                    <span class="floating-mvu-preset-candidate-type-toggle-face">${t(`candidate.type.${type}`)}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="floating-mvu-preset-candidate-count-row">
+                        <label class="floating-mvu-preset-candidate-count-label">${t('presetEditor.candidateCount')}</label>
+                        <input type="range" class="floating-mvu-preset-candidate-count" min="1" max="5" step="1" />
+                        <span class="floating-mvu-preset-candidate-count-value"></span>
+                    </div>
                 </div>
             </div>
             <hr class="wide100p marginTop10 marginBot10">
@@ -56,22 +81,27 @@ export async function openPresetEditor(presetId, options = {}) {
     $dialog.find('.floating-mvu-preset-name').val(preset.name);
     $dialog.find('.floating-mvu-preset-desc').val(preset.description);
     $dialog.find('.floating-mvu-preset-auto-update').prop('checked', preset.autoUpdateOnMessageReceived !== false);
+    $dialog.find('.floating-mvu-preset-sync-world-info').prop('checked', initialSyncWorldInfo);
     const $candidateToggle = $dialog.find('.floating-mvu-preset-candidates');
-    const $candidateCountRow = $dialog.find('.floating-mvu-preset-candidate-count-row');
+    const $candidateOptions = $dialog.find('.floating-mvu-preset-candidate-options');
     const $candidateRange = $dialog.find('.floating-mvu-preset-candidate-count');
     const $candidateValue = $dialog.find('.floating-mvu-preset-candidate-count-value');
     $candidateToggle.prop('checked', preset.autoCandidateReplies === true);
+    for (const type of MVU_CANDIDATE_TYPES) {
+        $dialog.find(`.floating-mvu-preset-candidate-type[data-candidate-type="${type}"]`)
+            .prop('checked', preset.candidateTypes?.[type] === true);
+    }
     $candidateRange.val(String(preset.maxCandidateCount ?? 3));
     $candidateValue.text(String($candidateRange.val()));
     $candidateRange.on('input', () => {
         $candidateValue.text(String($candidateRange.val()));
     });
-    const syncCandidateCountRowVisibility = () => {
+    const syncCandidateOptionsVisibility = () => {
         const on = $candidateToggle.prop('checked');
-        $candidateCountRow.toggleClass('floating-mvu-preset-candidate-count-row-hidden', !on);
+        $candidateOptions.toggleClass('floating-mvu-preset-candidate-options-hidden', !on);
     };
-    syncCandidateCountRowVisibility();
-    $candidateToggle.on('change', syncCandidateCountRowVisibility);
+    syncCandidateOptionsVisibility();
+    $candidateToggle.on('change', syncCandidateOptionsVisibility);
 
     const $configMount = $dialog.find('.floating-mvu-config-panel-mount');
     renderConfigPanel($configMount, preset);
@@ -112,7 +142,26 @@ export async function openPresetEditor(presetId, options = {}) {
     preset.autoUpdateOnMessageReceived = $dialog.find('.floating-mvu-preset-auto-update').prop('checked');
     preset.autoCandidateReplies = $dialog.find('.floating-mvu-preset-candidates').prop('checked');
     preset.maxCandidateCount = Number($dialog.find('.floating-mvu-preset-candidate-count').val());
+    /** @type {import('../mvu/schema.js').MvuPreset['candidateTypes']} */
+    const candidateTypes = {};
+    for (const type of MVU_CANDIDATE_TYPES) {
+        candidateTypes[type] = $dialog
+            .find(`.floating-mvu-preset-candidate-type[data-candidate-type="${type}"]`)
+            .prop('checked');
+    }
+    preset.candidateTypes = candidateTypes;
+    preset.syncVariablesToWorldInfo = $dialog.find('.floating-mvu-preset-sync-world-info').prop('checked');
     ensurePresetShape(preset);
     upsertPreset(preset);
+
+    if (getChatPresetId() === preset.id) {
+        const syncNow = isPresetWorldInfoSyncEnabled(preset);
+        if (initialSyncWorldInfo && !syncNow) {
+            await removeMvuWorldInfoEntry();
+        } else if (syncNow) {
+            await syncMvuWorldInfoFromChatImmediate(preset);
+        }
+    }
+
     options.onSaved?.();
 }

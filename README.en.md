@@ -157,7 +157,7 @@ When **Sync state to World Info** is enabled, the extension upserts one **【MVU
 
 If none apply, a one-time console log and toastr warning; no write. Each chat stores `{ bookName, entryUid }` in `chat_metadata.floating_mvu.worldInfoRef`.
 
-**Updates run** after successful MVU writes, message delete/swipe, chat load/switch (timeline sync), and preset binding changes. Turning preset sync off removes the entry. Per-variable **Include in World Info** excludes that line from content.
+**Updates run** after successful MVU writes, message delete/swipe, chat load/switch (timeline sync), and preset binding changes. Turning preset sync off removes the entry. Per-variable **Include in World Info** excludes that line from content. A fixed blockquote **usage notice** is appended at the end (state is for reasoning only, not in-character exposure).
 
 ### 6. Themes (palette)
 

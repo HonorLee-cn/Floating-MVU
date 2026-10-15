@@ -286,20 +286,25 @@
   align-items: center;
   gap: 4px;
 }
-.floating-mvu-header-actions .floating-mvu-header-btn-hidden {
+.floating-mvu-header-actions .floating-mvu-header-btn-hidden,
+.floating-mvu-title .floating-mvu-header-btn-hidden {
   display: none !important;
 }
-.floating-mvu-header-actions .floating-mvu-icon-btn.menu_button {
+.floating-mvu-header-actions .floating-mvu-icon-btn.menu_button,
+.floating-mvu-title .floating-mvu-title-vars-btn.menu_button {
   width: 22px;
   height: 22px;
   min-width: 22px;
   min-height: 22px;
   padding: 0;
+  margin: 0;
   line-height: 1;
   font-size: 0.7rem;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   border-radius: 5px;
   cursor: pointer;
   color: var(--mvu-icon-btn-color, var(--mvu-title-color));
@@ -307,7 +312,8 @@
   background-color: var(--mvu-icon-btn-bg, transparent);
   box-shadow: none;
 }
-.floating-mvu-header-actions .floating-mvu-icon-btn.menu_button:hover {
+.floating-mvu-header-actions .floating-mvu-icon-btn.menu_button:hover,
+.floating-mvu-title .floating-mvu-title-vars-btn.menu_button:hover {
   color: var(--mvu-icon-btn-hover-color, var(--mvu-panel-text));
   border-color: var(--mvu-icon-btn-hover-border, var(--mvu-header-border));
   background-color: var(--mvu-icon-btn-hover-bg, var(--mvu-var-block-hover-bg));

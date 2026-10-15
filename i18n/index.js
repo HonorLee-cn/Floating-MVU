@@ -78,6 +78,7 @@ export function applyPanelChromeI18n() {
     }
 
     const map = [
+        ['.floating-mvu-title-vars-btn', 'panel.editValues', 'aria-label'],
         ['.floating-mvu-refresh-btn', 'panel.refresh', 'aria-label'],
         ['.floating-mvu-theme-btn', 'panel.theme', 'aria-label'],
         ['.floating-mvu-settings-btn', 'panel.settings', 'aria-label'],

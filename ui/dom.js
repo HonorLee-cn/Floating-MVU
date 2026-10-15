@@ -9,7 +9,8 @@ import { makeDraggable } from './drag.js';
 import { makePanelResizable } from './resize.js';
 import { bindCandidateListFabFollow, refreshCandidateList } from './candidate-list.js';
 import { syncPanelHeaderRefreshButton } from './panel-header-chrome.js';
-import { ensureFabUpdateBadge, ensurePanelTitleChrome } from './title-chrome.js';
+import { ensureFabUpdateBadge, ensurePanelTitleChrome, ensurePanelVarsButton } from './title-chrome.js';
+import { openMvuValuesEditor } from './values-editor.js';
 import {
     clampAllFloatingMvuElements,
     clampElementToViewport,
@@ -199,6 +200,15 @@ function bindPanelHeaderActions($panel) {
         event.stopPropagation();
         void runMvuPanelRefresh();
     });
+
+    $panel.find('.floating-mvu-title-vars-btn').off('mousedown.floatingMvu').on('mousedown.floatingMvu', (event) => {
+        event.stopPropagation();
+    });
+    $panel.find('.floating-mvu-title-vars-btn').off('click.floatingMvu').on('click.floatingMvu', (event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        void openMvuValuesEditor();
+    });
 }
 
 function upgradeLegacyDom() {
@@ -241,6 +251,7 @@ function upgradeLegacyDom() {
         bindFabDrag($fab);
     }
     ensurePanelTitleChrome();
+    ensurePanelVarsButton();
     ensureFabUpdateBadge();
 
     ensurePanelResizeHandle($panel);
@@ -253,6 +264,7 @@ function ensureDom() {
     if ($(`#${ROOT_ID}`).length) {
         upgradeLegacyDom();
         ensurePanelTitleChrome();
+        ensurePanelVarsButton();
         ensureFabUpdateBadge();
         return;
     }
@@ -268,6 +280,7 @@ function ensureDom() {
             <div id="${PANEL_ID}" class="floating-mvu-panel floating-mvu-panel-collapsed">
                 <div class="floating-mvu-header">
                     <span class="floating-mvu-title floating-mvu-panel-drag-handle">
+                        <button type="button" class="floating-mvu-icon-btn floating-mvu-title-vars-btn menu_button floating-mvu-header-btn-hidden" aria-label="V">V</button>
                         <span class="floating-mvu-title-name">Floating MVU</span>
                         <span class="floating-mvu-title-status" aria-live="polite"></span>
                     </span>
@@ -294,6 +307,7 @@ function ensureDom() {
     bindPanelDrag($panel);
     bindPanelResize($panel);
     ensurePanelTitleChrome();
+    ensurePanelVarsButton();
     ensureFabUpdateBadge();
 }
 

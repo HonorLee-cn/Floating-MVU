@@ -102,6 +102,7 @@ export function buildMvuWorldInfoContent(preset, values) {
         lines.push(desc ? `${name}:${text} *${desc}*` : `${name}:${text}`);
     }
 
+    lines.push('', t('worldInfo.syncUsageNotice'));
     return lines.join('\n');
 }
 

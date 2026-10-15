@@ -1,12 +1,17 @@
 import { isChatPresetConfigured } from '../mvu/chat-preset.js';
 import { PANEL_ID } from '../settings.js';
+import { ensurePanelVarsButton } from './title-chrome.js';
 
-/** 已绑定预设时在标题栏显示刷新按钮（测试：输出 MVU 对话 Prompt） */
+/** 已绑定预设时在标题栏显示刷新 / 变量编辑按钮 */
 export function syncPanelHeaderRefreshButton() {
-    const $btn = $(`#${PANEL_ID} .floating-mvu-refresh-btn`);
-    if (!$btn.length) {
-        return;
-    }
+    ensurePanelVarsButton();
     const show = isChatPresetConfigured();
-    $btn.toggleClass('floating-mvu-header-btn-hidden', !show);
+    const $refresh = $(`#${PANEL_ID} .floating-mvu-refresh-btn`);
+    if ($refresh.length) {
+        $refresh.toggleClass('floating-mvu-header-btn-hidden', !show);
+    }
+    const $vars = $(`#${PANEL_ID} .floating-mvu-title-vars-btn`);
+    if ($vars.length) {
+        $vars.toggleClass('floating-mvu-header-btn-hidden', !show);
+    }
 }

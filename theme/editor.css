@@ -458,6 +458,32 @@
     font-size: 0.95rem;
 }
 
+.floating-mvu-values-editor-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.floating-mvu-values-editor-row label.floating-mvu-values-editor-label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.floating-mvu-values-editor-desc {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.78rem;
+    font-weight: 400;
+    opacity: 0.75;
+}
+
+.floating-mvu-values-editor-range-hint {
+    font-weight: 500;
+    opacity: 0.8;
+}
+
 .floating-mvu-theme-manager-list {
     display: flex;
     flex-direction: column;

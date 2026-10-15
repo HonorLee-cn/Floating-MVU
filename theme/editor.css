@@ -284,6 +284,47 @@
     max-width: 100%;
 }
 
+.floating-mvu-config-sort-item--divider .floating-mvu-config-drag-handle {
+    margin-top: 0;
+    align-self: center;
+}
+
+.floating-mvu-config-sort-item--divider .floating-mvu-config-sort-item-body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+
+.floating-mvu-config-divider {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    padding: 2px 0;
+    box-sizing: border-box;
+}
+
+.floating-mvu-config-divider-line {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 0;
+    border: none;
+    border-top: 1px dashed var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.45));
+    opacity: 0.55;
+    margin: 0;
+}
+
+.floating-mvu-config-divider-delete {
+    flex: 0 0 auto;
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
+    padding: 0;
+}
+
 .floating-mvu-config-panel .floating-mvu-group-box:not(.floating-mvu-group-root) > .floating-mvu-group-box-stack[data-config-sort-stack] {
     display: flex;
     flex-direction: row;

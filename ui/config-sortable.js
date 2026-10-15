@@ -157,8 +157,9 @@ export function createConfigSortItem(child) {
     const varTypeAttr = kind === 'variable'
         ? ` data-var-type="${child.varType}"`
         : '';
+    const dividerClass = kind === 'divider' ? ' floating-mvu-config-sort-item--divider' : '';
     return $(`
-        <div class="floating-mvu-config-sort-item" data-sort-kind="${kind}" data-sort-id="${id}"${varTypeAttr}>
+        <div class="floating-mvu-config-sort-item${dividerClass}" data-sort-kind="${kind}" data-sort-id="${id}"${varTypeAttr}>
             <button type="button" class="floating-mvu-config-drag-handle menu_button" title="${t('var.dragSort')}" aria-label="${t('var.dragSort')}" draggable="true">
                 <i class="fa-solid fa-grip-vertical"></i>
             </button>

@@ -553,6 +553,21 @@
   min-height: 32px;
   box-sizing: border-box;
 }
+.floating-mvu-panel-divider {
+  flex: 0 0 auto;
+  width: 100%;
+  height: 0;
+  border: none;
+  border-top: 1px dashed var(--mvu-var-block-border, rgba(128, 128, 128, 0.35));
+  background: none !important;
+  opacity: 0.5;
+  margin: 2px 0;
+  box-sizing: border-box;
+}
+.floating-mvu-group-box-stack > .floating-mvu-panel-divider {
+  flex: 1 1 100%;
+  max-width: 100%;
+}
 .floating-mvu-var-empty {
   opacity: 0.65;
   font-style: italic;

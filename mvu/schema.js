@@ -21,16 +21,22 @@ export const DEFAULT_RANGE_MAX = 100;
 export const DEFAULT_IMAGE_HEIGHT_PX = 120;
 
 /**
+ * @typedef {object} MvuDividerNode
+ * @property {'divider'} type
+ * @property {string} id
+ */
+
+/**
  * @typedef {object} MvuGroupNode
  * @property {'group'} type
  * @property {string} id
  * @property {string} [name]
  * @property {string} [cssClass]
- * @property {(MvuVariableNode | MvuGroupNode)[]} children
+ * @property {(MvuVariableNode | MvuGroupNode | MvuDividerNode)[]} children
  */
 
 /**
- * @typedef {MvuVariableNode | MvuGroupNode} MvuNode
+ * @typedef {MvuVariableNode | MvuGroupNode | MvuDividerNode} MvuNode
  */
 
 /**
@@ -116,6 +122,18 @@ export function createVariable(overrides = {}) {
         varType: 'text',
         description: '',
         includeInWorldInfo: true,
+        ...overrides,
+    };
+}
+
+/**
+ * @param {Partial<MvuDividerNode>} [overrides]
+ * @returns {MvuDividerNode}
+ */
+export function createDivider(overrides = {}) {
+    return {
+        type: 'divider',
+        id: uuidv4(),
         ...overrides,
     };
 }
@@ -365,12 +383,21 @@ function ensureGroupShape(group, isRoot = false) {
     if (!Array.isArray(group.children)) {
         group.children = [];
     }
-    group.children = group.children.filter(child => child?.type === 'variable' || child?.type === 'group');
+    group.children = group.children.filter(child => {
+        if (child?.type === 'divider') {
+            return isRoot;
+        }
+        return child?.type === 'variable' || child?.type === 'group';
+    });
     for (const child of group.children) {
         if (child.type === 'variable') {
             ensureVariableShape(child);
         } else if (child.type === 'group') {
             ensureGroupShape(child, false);
+        } else if (child.type === 'divider') {
+            if (!child.id) {
+                child.id = uuidv4();
+            }
         }
     }
 }
@@ -539,6 +566,10 @@ export function moveConfigChildInPreset(preset, childId, targetParentGroupId, be
         return false;
     }
 
+    if (item.type === 'divider' && targetParent.id !== preset.root.id) {
+        return false;
+    }
+
     if (sourceParent.id === targetParent.id) {
         return reorderGroupChild(sourceParent, childId, beforeChildId);
     }
@@ -610,6 +641,30 @@ export function removeVariableFromPreset(preset, variableId) {
         return false;
     }
     return removeVariableFromGroup(parent, variableId);
+}
+
+/**
+ * @param {MvuGroupNode} group
+ * @param {string} dividerId
+ * @returns {boolean}
+ */
+export function removeDividerFromGroup(group, dividerId) {
+    const before = group.children.length;
+    group.children = group.children.filter(c => !(c.type === 'divider' && c.id === dividerId));
+    return group.children.length < before;
+}
+
+/**
+ * @param {MvuPreset} preset
+ * @param {string} dividerId
+ * @returns {boolean}
+ */
+export function removeDividerFromPreset(preset, dividerId) {
+    const parent = findParentGroupOfChild(preset.root, dividerId);
+    if (!parent || parent.id !== preset.root.id) {
+        return false;
+    }
+    return removeDividerFromGroup(parent, dividerId);
 }
 
 /**

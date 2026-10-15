@@ -93,6 +93,8 @@ export const FMVU_MESSAGES = {
         'var.dragSort': '拖动排序',
         'config.emptyGroup': '暂无内容，可添加变量或分组。',
         'config.groupNoVars': '该分组暂无变量。',
+        'config.addDivider': '增加分割线',
+        'config.deleteDivider': '删除分割线',
 
         'group.editTitle': '编辑分组',
         'group.name': '分组名称',
@@ -307,6 +309,8 @@ export const FMVU_MESSAGES = {
         'var.dragSort': 'Drag to reorder',
         'config.emptyGroup': 'Empty. Add a variable or group.',
         'config.groupNoVars': 'No variables in this group.',
+        'config.addDivider': 'Add divider',
+        'config.deleteDivider': 'Remove divider',
 
         'group.editTitle': 'Edit group',
         'group.name': 'Group name',

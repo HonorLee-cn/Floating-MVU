@@ -1,7 +1,14 @@
 import { escapeHtml } from '../../../../utils.js';
 import { t } from '../i18n/index.js';
 import { applyMvuTextVariableMacros } from '../mvu/text-macros.js';
-import { createGroup, createVariable, isRootGroup } from '../mvu/schema.js';
+import {
+    createDivider,
+    createGroup,
+    createVariable,
+    isRootGroup,
+    removeDividerFromPreset,
+} from '../mvu/schema.js';
+import { renderConfigDividerHtml, renderPanelDividerHtml } from './divider-block.js';
 import { groupHasVisibleTitle, openGroupEditor, renderGroupHeaderLabel } from './group-editor.js';
 import { bindConfigPanelSortable, createConfigSortItem } from './config-sortable.js';
 import { openVariableEditor, renderVariableBlockHtml } from './variable-editor.js';
@@ -30,7 +37,9 @@ function appendGroupChildNodes($stack, group, ctx) {
     for (const child of group.children) {
         const $item = createConfigSortItem(child);
         const $body = $item.find('.floating-mvu-config-sort-item-body');
-        if (child.type === 'variable') {
+        if (child.type === 'divider') {
+            $body.append(renderConfigDividerHtml(child.id));
+        } else if (child.type === 'variable') {
             $body.append(renderVariableBlockHtml(child, { editable: true }));
         } else {
             $body.append(buildGroupElement(child, ctx));
@@ -70,6 +79,9 @@ function buildGroupElement(group, ctx) {
                     <button type="button" class="menu_button floating-mvu-add-group" title="${escapeHtml(t('var.addGroup'))}">
                         <i class="fa-solid fa-folder-plus"></i><span>${escapeHtml(t('var.addGroup'))}</span>
                     </button>
+                    ${root ? `<button type="button" class="menu_button floating-mvu-add-divider" title="${escapeHtml(t('config.addDivider'))}">
+                        <i class="fa-solid fa-minus"></i><span>${escapeHtml(t('config.addDivider'))}</span>
+                    </button>` : ''}
                     ${root ? '' : `<button type="button" class="menu_button floating-mvu-edit-group" title="${escapeHtml(t('var.editGroup'))}"><i class="fa-solid fa-pen"></i></button>`}
                 </div>
             </div>
@@ -99,6 +111,16 @@ function bindGroupElementEvents($box, $innerStack, group, ctx) {
         handlers.onChange?.();
     };
 
+    $innerStack.on('click', '.floating-mvu-config-divider-delete', (event) => {
+        event.stopPropagation();
+        const dividerId = $(event.currentTarget).closest('.floating-mvu-config-divider').data('divider-id');
+        if (!dividerId) {
+            return;
+        }
+        removeDividerFromPreset(preset, String(dividerId));
+        refresh();
+    });
+
     $innerStack.on('click', '.floating-mvu-config-sort-item-body > .floating-mvu-var-block', function (event) {
         event.stopPropagation();
         const variableId = $(this).data('variable-id');
@@ -126,6 +148,15 @@ function bindGroupElementEvents($box, $innerStack, group, ctx) {
     $header.find('.floating-mvu-add-group').on('click', (event) => {
         event.stopPropagation();
         group.children.push(createGroup({ name: t('defaults.newGroup') }));
+        refresh();
+    });
+
+    $header.find('.floating-mvu-add-divider').on('click', (event) => {
+        event.stopPropagation();
+        if (!isRootGroup(group)) {
+            return;
+        }
+        group.children.push(createDivider());
         refresh();
     });
 
@@ -219,6 +250,11 @@ export function appendReadonlyGroupTree($container, group, readonly = true, vari
     };
 
     for (const child of group.children) {
+        if (child.type === 'divider') {
+            flushFlexRow();
+            $stack.append(renderPanelDividerHtml());
+            continue;
+        }
         if (child.type === 'variable') {
             if (layoutVarsVertical) {
                 flushFlexRow();

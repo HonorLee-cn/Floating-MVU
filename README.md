@@ -22,6 +22,8 @@
 
 <center>
 
+[![Full2](image/Full_2.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Full_2.png)
+
 [![Full](image/Full.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Full.png)
 
 ```请务必无视本人的特殊癖好 ε==(づ′▽`)づ```
@@ -70,6 +72,8 @@
 <center>
 
 [![Main](image/Main.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Main.png)
+
+[![Main2](image/Main_2.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Main_2.png)
 
 </center>
 
@@ -145,6 +149,13 @@
 - 候选与变量一并写入聊天 `chat_metadata.floating_mvu.candidates` 及时间线快照；删消息 / swipe 与变量同步恢复。
 - UI：FAB **上方**、右边缘与 FAB 对齐；点击候选项**替换** `#send_textarea` 内容并按类型包裹（已有外层符号则不再包裹）。用户**发送消息**后列表隐藏，待下次 MVU 更新成功再显示。
 
+<center>
+
+[![Auto](image/Auto.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Auto.png)
+[![Autoset](image/Autoset.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Autoset.png)
+
+</center>
+
 ### 5.2 状态写入世界书
 
 预设开启 **状态写入世界书** 后，扩展会在**一本**目标世界书中维护备注为 **【MVU-VARS】** 的条目（`automationId: floating_mvu_vars`）：**永久激活**（`constant`）、插入位置 **↓Char**（角色定义之后）。正文首行为 `### {{char}} 角色状态`，其后每行 `变量名:值`（文本宏与面板一致）；有**变量说明**时在值后以 `*说明*` 追加。**范围数值**示例：`HP:80(0~100) *生命值说明*`。
@@ -158,6 +169,8 @@
 若三本皆不可用，控制台与 toastr 提示一次，不写入。每个聊天在 `chat_metadata.floating_mvu.worldInfoRef` 记录 `{ bookName, entryUid }`，用于更新/删除同一 UID。
 
 **触发更新**：MVU 刷新写入成功；删消息 / swipe；加载或切换聊天（时间线同步）；绑定预设变更；关闭预设同步时删除条目。变量级 **世界书变量** 关闭后，该变量不出现在正文中（预设总开关关闭时整段条目删除）。正文末尾固定附带一条 **引用式** 使用说明（角色状态仅用于推演、不得入戏暴露等）。
+
+[![Lorebook](image/Lorebook.png)](https://github.com/HonorLee-cn/Floating-MVU/blob/master/image/Lorebook.png)
 
 ### 6. 主题（调色板）
 

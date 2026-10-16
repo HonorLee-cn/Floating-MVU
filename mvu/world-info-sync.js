@@ -9,6 +9,7 @@ import {
     createWorldInfoEntry,
     loadWorldInfo,
     METADATA_KEY as WORLD_INFO_METADATA_KEY,
+    reloadEditor,
     saveWorldInfo,
     selected_world_info,
     world_info_position,
@@ -255,6 +256,7 @@ export async function syncMvuWorldInfoFromChat(preset) {
 
     await saveWorldInfo(bookName, data, true);
     await saveMetadata();
+    reloadEditor(bookName);
     floatingMvuDebugTrace('世界书 MVU-VARS 已同步', {
         bookName,
         entryUid: bindingWorldInfoRefUid(),

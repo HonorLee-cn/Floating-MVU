@@ -3,7 +3,8 @@ import { escapeHtml } from '../../../../utils.js';
 import { t } from '../i18n/index.js';
 import { getBoundPresetForChat } from '../mvu/chat-preset.js';
 import { getChatVariableValues, mergeChatVariableValues } from '../mvu/chat-variables.js';
-import { getPresetVariables, getVariableRangeBounds } from '../mvu/schema.js';
+import { getPresetVariables, getVariableRangeBounds, isPresetWorldInfoSyncEnabled } from '../mvu/schema.js';
+import { syncMvuWorldInfoFromChatImmediate } from '../mvu/world-info-sync.js';
 import { refreshPanelView } from './panel-views.js';
 
 /**
@@ -123,6 +124,9 @@ export async function openMvuValuesEditor() {
 
     const patch = collectPatchFromDialog($dialog);
     await mergeChatVariableValues(preset, patch);
+    if (isPresetWorldInfoSyncEnabled(preset)) {
+        await syncMvuWorldInfoFromChatImmediate(preset);
+    }
     refreshPanelView();
 
     if (typeof toastr !== 'undefined') {

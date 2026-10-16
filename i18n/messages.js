@@ -170,7 +170,7 @@ export const FMVU_MESSAGES = {
         'err.refreshInFlight': '上一次刷新尚未结束，已忽略重复点击',
         'err.emptyMvuResponse': 'API 返回的正文为空。请检查 Text Completion / 模型连接；推理模型若 thinking 不在正文里，需在 llama.cpp 或 ST 中让生成内容进入 content 字段。',
         'err.worldInfoNoBook': '无法同步到世界书：当前聊天没有可用的世界书（聊天专属 / 角色主世界书 / 全局勾选第一本）。',
-        'worldInfo.syncUsageNotice': '> 角色状态只会影响剧情推演，不会直接显示、暴露或参与在回复的实际内容中，角色不会对状态数据有任何感知',
+        'worldInfo.syncUsageNotice': '> 角色状态只会影响剧情推演，不会直接显示、暴露或参与在回复的实际内容中，角色不会对状态数据有任何感知，回复中系统也不要对数值进行任何修改，数值变动由外部系统插件处理',
 
         'prompt.system': '你是剧情状态追踪助手。根据提供的变量定义、当前变量值与最近对话，更新需要追踪的状态变量。你可以先进行必要的思考，但回复中必须包含且仅包含一段有效的 <floating-mvu>{JSON}</floating-mvu>（闭合标签为 </floating-mvu>，标签名勿拆字）。文本/长文本类变量的取值应与对话语言一致（中文对话用中文，除非变量说明另有要求）。',
         'prompt.prefix': '按照以下格式定义返回当前角色/场景需要持续追踪的状态变量，更新变量数值或文本时须符合各变量的类型与约束，若变量说明为空，请按变量名与类型合理推断用途。',
@@ -394,7 +394,7 @@ export const FMVU_MESSAGES = {
         'err.refreshInFlight': 'Previous refresh still running; ignored duplicate click',
         'err.emptyMvuResponse': 'API returned empty assistant text. Check Text Completion / model connection; for reasoning models, ensure generated text reaches the content field.',
         'err.worldInfoNoBook': 'Cannot sync to World Info: no book available for this chat (chat-specific / character primary / first selected global book).',
-        'worldInfo.syncUsageNotice': '> Character state guides story reasoning only; it must not appear in, leak into, or be part of actual replies, and the character must not be aware of these values.',
+        'worldInfo.syncUsageNotice': '> Character state guides story reasoning only; it must not appear in, leak into, or be part of actual replies, and the character must not be aware of these values. The model must not change numeric values in replies; updates are handled by external plugin systems.',
 
         'prompt.system': 'You are a state-tracking assistant. Using the variable definitions, current values, and recent dialogue, update tracked state variables. You may think first if needed, but the reply must include one valid <floating-mvu>{JSON}</floating-mvu> block (close with </floating-mvu>). Match the recent dialogue language for text fields.',
         'prompt.prefix': 'Return continuously tracked state variables for the current character/scene in the format below. Respect each variable type and constraints; if description is empty, infer from the name and type.',

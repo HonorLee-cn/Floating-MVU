@@ -65,12 +65,9 @@ export function registerMvuQuietGenerationHooks() {
  * @param {number} attemptIndex
  * @returns {string}
  */
-function prefillForMvuAttempt(attemptIndex) {
-    // 从第 2 次起锚定 JSON 输出，避免前几次纯随机采样直出 EOS
-    if (attemptIndex >= 1) {
-        return '<floating-mvu>{';
-    }
-    return '';
+function prefillForMvuAttempt(_attemptIndex) {
+    // 首次即锚定 JSON，避免 llama 等直出 EOS（仅 1 token）后又整段 prompt 重跑
+    return '<floating-mvu>{';
 }
 
 /**

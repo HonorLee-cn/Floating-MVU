@@ -6,7 +6,7 @@
  * See LICENSE in this directory for the full GNU GPL v3 text.
  */
 import { chat, eventSource, event_types } from '../../../../script.js';
-import { isActiveChatContext } from './chat-context.js';
+import { getActiveChatId, isActiveChatContext } from './chat-context.js';
 import { floatingMvuDebugTrace } from './debug-log.js';
 import { getBoundPresetForChat } from './mvu/chat-preset.js';
 import { registerMvuQuietGenerationHooks } from './mvu/mvu-st-generate.js';
@@ -25,6 +25,13 @@ import { syncFloatingMvuUi } from './ui/dom.js';
 import { clampAllFloatingMvuElements, registerViewportListeners } from './ui/viewport.js';
 
 export const MODULE_NAME = 'FloatingMVU';
+
+/** 同聊天、同消息索引在窗口期内只自动刷新一次（ST 可能重复 emit MESSAGE_RECEIVED） */
+const AUTO_MVU_REFRESH_DEDUPE_MS = 4000;
+/** @type {string} */
+let lastAutoMvuRefreshKey = '';
+/** @type {number} */
+let lastAutoMvuRefreshAt = 0;
 
 function onContextChange() {
     syncFloatingMvuUi();
@@ -61,6 +68,16 @@ function onMessageReceived(messageId, type) {
     if (!message || message.is_user || message.is_system || !String(message.mes ?? '').trim()) {
         return;
     }
+
+    const chatId = getActiveChatId() ?? '';
+    const dedupeKey = `${chatId}:${index}`;
+    const now = Date.now();
+    if (dedupeKey === lastAutoMvuRefreshKey && now - lastAutoMvuRefreshAt < AUTO_MVU_REFRESH_DEDUPE_MS) {
+        floatingMvuDebugTrace('忽略重复的 MVU 自动更新', { messageId: index, type, dedupeKey });
+        return;
+    }
+    lastAutoMvuRefreshKey = dedupeKey;
+    lastAutoMvuRefreshAt = now;
 
     floatingMvuDebugTrace('收到角色消息，触发 MVU 自动更新', { messageId: index, type });
     void runMvuPanelRefresh({ anchorMessageIndex: index });
@@ -115,7 +132,7 @@ export async function init() {
     eventSource.on(event_types.CHAT_LOADED, onContextChange);
     eventSource.on(event_types.CHAT_DELETED, onChatRemoved);
     eventSource.on(event_types.GROUP_CHAT_DELETED, onChatRemoved);
-    eventSource.on(event_types.MESSAGE_RECEIVED, onMessageReceived);
+    eventSource.makeFirst(event_types.MESSAGE_RECEIVED, onMessageReceived);
     eventSource.on(event_types.MESSAGE_DELETED, onMessageDeleted);
     eventSource.on(event_types.MESSAGE_SWIPED, onMessageSwiped);
     eventSource.on(event_types.MESSAGE_SENT, onMessageSent);

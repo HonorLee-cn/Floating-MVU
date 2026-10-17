@@ -31,6 +31,7 @@ function buildOpenAiChatBody(request, model, attemptIndex = 0) {
         messages: [
             { role: 'system', content: request.systemPrompt },
             { role: 'user', content: request.userPrompt },
+            { role: 'assistant', content: '<floating-mvu>{' },
         ],
         reasoning_in_content: true,
         reasoning_format: 'none',
@@ -197,9 +198,12 @@ export async function callMvuUpdateApi(request) {
     let extracted = { text: '', usedFallback: false, sources: [] };
     let attemptCount = 0;
 
-    for (let attemptIndex = 0; attemptIndex < MVU_MAX_GENERATION_ATTEMPTS; attemptIndex++) {
-        attemptCount = attemptIndex + 1;
-        rawResponse = await generateRawDataForMvuViaSillyTavern(request, { attemptIndex });
+        for (let attemptIndex = 0; attemptIndex < MVU_MAX_GENERATION_ATTEMPTS; attemptIndex++) {
+            attemptCount = attemptIndex + 1;
+            if (attemptIndex > 0) {
+                floatingMvuDebugTrace('MVU ST 空返后重试', { attemptCount, maxAttempts: MVU_MAX_GENERATION_ATTEMPTS });
+            }
+            rawResponse = await generateRawDataForMvuViaSillyTavern(request, { attemptIndex });
         extracted = extractMvuAssistantText(rawResponse, main_api);
 
         if (hasMvuAssistantText(extracted.text)) {

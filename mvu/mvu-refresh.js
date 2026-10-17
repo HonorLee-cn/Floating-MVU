@@ -69,6 +69,11 @@ export async function runMvuPanelRefresh(options = {}) {
 
         floatingMvuDebugLog('========== 2. API 完整返回 ==========');
         floatingMvuDebugLog('provider:', apiResult.provider);
+        if (typeof apiResult.attemptCount === 'number' && apiResult.attemptCount > 1) {
+            floatingMvuDebugLog(
+                `本次 MVU 共发起 ${apiResult.attemptCount} 次模型请求（前几次无正文时会自动重试，每次都会重新跑完整 prompt）`,
+            );
+        }
         floatingMvuDebugLog('请求日志（含 URL/body 或 generateRaw 参数）:', apiResult.requestLog);
         floatingMvuDebugLog('rawResponse（完整）:', apiResult.rawResponse);
         floatingMvuDebugLog('assistantText（提取后）:\n', apiResult.assistantText);
